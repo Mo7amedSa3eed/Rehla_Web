@@ -1,0 +1,89 @@
+<div class="container trips-page">
+
+  <h2 class="title">Available Trips</h2>
+
+  <div *ngIf="state.searchResults.length === 0" class="no-results">
+  <p>No trips to display.</p>
+  <span>Use the booking page to search for available trips.</span>
+  </div>
+
+  <div
+    *ngFor="let trip of state.searchResults"
+    class="trip-card card">
+
+
+    <div class="trip-header">
+
+      <div class="route">
+        <span class="city">{{trip.from}}</span>
+        <span class="arrow">›</span>
+        <span class="city">{{trip.to}}</span>
+      </div>
+
+      <div class="price">
+        From {{trip.price}} EGP
+      </div>
+
+    </div>
+
+    <div class="trip-meta-row">
+      <span>Agency: {{trip.agencyName}}</span>
+      <span>Occurrence ID: {{trip.tripOccurrenceId}}</span>
+      <span>Trip ID: {{trip.tripId}}</span>
+    </div>
+
+
+    <div class="trip-details">
+
+      <span>📅 {{trip.date}}</span>
+      <span>🕒 Boarding {{trip.time}}</span>
+      <span>🕒 Dropoff {{trip.dropoffTime}}</span>
+      <span>🚍 Departure {{trip.departureTime}}</span>
+      <span>🏁 Arrival {{trip.arrivalTime}}</span>
+      <span>⏱ {{trip.duration}}</span>
+
+    </div>
+
+    <div class="trip-station-row">
+      <span>Origin Station: {{trip.originStationName}} ({{trip.from}})</span>
+      <span>Destination Station: {{trip.destinationStationName}} ({{trip.to}})</span>
+    </div>
+
+    <div class="trip-classes" *ngIf="trip.availableClasses.length > 0">
+      <h4>Available Classes</h4>
+      <div class="class-list">
+        <div class="class-item" *ngFor="let classItem of trip.availableClasses">
+          <span>{{classItem.className}}</span>
+          <span>{{classItem.price}} EGP</span>
+          <span>{{classItem.remainingSeats}} seats</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="trip-stops" *ngIf="trip.routeStops.length > 0">
+      <h4>Route Stops</h4>
+      <div class="stops-list">
+        <div class="stop-item" *ngFor="let stop of trip.routeStops">
+          <span>#{{stop.stopSequence}} {{stop.stationName}}</span>
+          <span>Arr: {{stop.arrivalTime || '-'}}</span>
+          <span>Dep: {{stop.departureTime || '-'}}</span>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="trip-footer">
+
+      <span class="seats">{{trip.seats}} seats available in {{trip.className}}</span>
+
+      <button
+        class="select-btn btn btn-primary"
+        (click)="bookTrip(trip)">
+        Select Trip
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

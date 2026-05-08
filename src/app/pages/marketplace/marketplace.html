@@ -1,0 +1,31 @@
+<div class="marketplace">
+
+  <h2>Ticket Marketplace</h2>
+
+  <div *ngIf="state.marketplace.length === 0" class="empty">
+    No tickets available in the marketplace.
+  </div>
+
+  <div class="ticket-card" *ngFor="let ticket of state.marketplace">
+    <div class="ticket-header">
+      <h3>{{ticket.from}} → {{ticket.to}}</h3>
+      <span class="badge">Resold Ticket</span>
+    </div>
+
+    <div class="ticket-info">
+      <p>📅 {{ticket.date}}</p>
+      <p>⏰ {{ticket.time}}</p>
+      <p *ngIf="ticket.passengers">👤 {{ticket.passengers}} Passenger(s)</p>
+    </div>
+
+    <div class="price-section">
+      <span class="old-price">${{ticket.originalPrice | number:'1.2-2'}}</span>
+      <span class="new-price">${{ticket.price | number:'1.2-2'}}</span>
+
+      <button class="buy-btn" (click)="buyTicket(ticket)">
+        Buy Ticket
+      </button>
+    </div>
+  </div>
+
+</div>

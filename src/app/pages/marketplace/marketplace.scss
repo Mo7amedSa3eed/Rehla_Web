@@ -1,0 +1,76 @@
+.marketplace{
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+
+h2{
+  font-size:28px;
+  margin-bottom:20px;
+  color: #FFFFFF;
+}
+
+.empty{
+  text-align:center;
+  margin-top:60px;
+  color:#8BA0B8;
+}
+
+.ticket-card{
+  background:#142F4F;
+  border: 1px solid #1E3A52;
+  border-radius:12px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 8px 18px rgba(0, 0, 0, 0.25);
+  border-left:4px solid #E67E22;
+}
+
+.ticket-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.badge{
+  background:#1A3045;
+  color:#00B1DF;
+  padding:4px 10px;
+  border-radius:20px;
+  font-size:12px;
+}
+
+.ticket-info{
+  margin-top:10px;
+  display:flex;
+  gap:20px;
+  color:#8BA0B8;
+}
+
+.price-section{
+  margin-top:15px;
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.old-price{
+  text-decoration:line-through;
+  color:#8BA0B8;
+}
+
+.new-price{
+  color:#00C853;
+  font-weight:600;
+  font-size:18px;
+}
+
+.buy-btn{
+  margin-left:auto;
+  background: linear-gradient(90deg, #00E5FF, #007AFF);
+  color:#FFFFFF;
+  border:none;
+  padding:8px 16px;
+  border-radius:6px;
+  cursor:pointer;
+}

@@ -1,0 +1,191 @@
+<div class="container booking-page">
+
+
+  <div class="hero">
+    <h1>Book Your Next Journey</h1>
+    <p>Travel smarter with our all-in-one platform</p>
+  </div>
+
+
+  <div class="booking-card card">
+
+
+    <h3>Choose Transportation Mode</h3>
+
+    <div class="transport-grid">
+
+      <div
+        class="transport-card"
+        [class.active]="transportMode === 'bus'"
+        (click)="onBusCardClick()">
+
+        <div class="icon bus">🚌</div>
+        <span>Bus</span>
+
+      </div>
+
+      <div
+        class="transport-card"
+        [class.active]="transportMode === 'train'"
+        (click)="selectTransport('train')">
+
+        <div class="icon train">🚆</div>
+        <span>Train</span>
+
+      </div>
+
+    </div>
+
+    <div class="agency-selector" *ngIf="transportMode === 'bus' && showAgencyOptions">
+      <h4>Choose Company</h4>
+
+      <div class="agency-grid">
+        <button
+          type="button"
+          class="agency-option"
+          [class.active]="selectedAgency === 'Blue Bus'"
+          (click)="selectAgency('Blue Bus')">
+          Blue Bus
+        </button>
+
+        <button
+          type="button"
+          class="agency-option"
+          [class.active]="selectedAgency === 'GoBus'"
+          (click)="selectAgency('GoBus')">
+          GoBus
+        </button>
+
+        <button
+          type="button"
+          class="agency-option"
+          [class.active]="selectedAgency === 'Horus'"
+          (click)="selectAgency('Horus')">
+          Horus
+        </button>
+
+        <button
+          type="button"
+          class="agency-option"
+          [class.active]="selectedAgency === 'All companies'"
+          (click)="selectAgency('All companies')">
+          All companies
+        </button>
+      </div>
+    </div>
+
+
+
+    <h3>Trip Details</h3>
+
+  <p *ngIf="isLoadingStations" class="stations-loading">Loading stations...</p>
+
+    <!-- <div class="trip-type">
+
+      <button
+        [class.active]="tripType === 'oneway'"
+        (click)="tripType='oneway'">
+
+        One Way
+
+      </button>
+
+      <button
+        [class.active]="tripType === 'round'"
+        (click)="tripType='round'">
+
+        Round Trip
+
+      </button>
+
+    </div> -->
+
+
+    <div class="form-row">
+
+      <div class="form-group">
+        <label>From Governorate</label>
+        <select [(ngModel)]="fromGovernorate" (ngModelChange)="onFromGovernorateChange()">
+          <option value="" disabled selected>Select governorate</option>
+          <option *ngFor="let group of stationGroups" [value]="group.governorate">
+            {{group.governorate}}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>To Governorate</label>
+        <select [(ngModel)]="toGovernorate" (ngModelChange)="onToGovernorateChange()">
+          <option value="" disabled selected>Select governorate</option>
+          <option *ngFor="let group of stationGroups" [value]="group.governorate">
+            {{group.governorate}}
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="form-row">
+
+      <div class="form-group">
+        <label>From Station (Optional)</label>
+        <select [(ngModel)]="fromStationId" [disabled]="!fromGovernorate">
+          <option [ngValue]="null">All stations in governorate</option>
+          <option *ngFor="let station of fromStations" [ngValue]="station.id">
+            {{station.englishName}} ({{station.city}})
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>To Station (Optional)</label>
+        <select [(ngModel)]="toStationId" [disabled]="!toGovernorate">
+          <option [ngValue]="null">All stations in governorate</option>
+          <option *ngFor="let station of toStations" [ngValue]="station.id">
+            {{station.englishName}} ({{station.city}})
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+
+
+    <div class="form-row">
+
+      <div class="form-group">
+        <label>Date</label>
+        <input
+          type="date"
+          [(ngModel)]="date">
+      </div>
+
+      <div class="form-group">
+        <label>Time (Optional)</label>
+        <input
+          type="time"
+          [(ngModel)]="time">
+      </div>
+
+      <div class="form-group">
+        <label>Passengers</label>
+
+        <select [(ngModel)]="passengers">
+          <option [ngValue]="1">1 Passenger</option>
+          <option [ngValue]="2">2 Passengers</option>
+          <option [ngValue]="3">3 Passengers</option>
+          <option [ngValue]="4">4 Passengers</option>
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <button class="search-btn btn btn-primary" (click)="searchTrips()">
+      🔍 Search Available Trips
+    </button>
+
+  </div>
+
+</div>

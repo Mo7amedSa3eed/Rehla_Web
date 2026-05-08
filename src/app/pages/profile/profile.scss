@@ -1,0 +1,133 @@
+.profile-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.profile-card {
+  background: linear-gradient(180deg, #1E3C72, #2A5298);
+  border: 1px solid #20538D;
+  padding: 50px 40px;
+  border-radius: 20px;
+  width: 650px;
+  text-align: center;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 18px 50px -10px;
+}
+
+
+.avatar-large {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: #142F4F;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  font-size: 60px;
+}
+
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   
+  border-radius: 50%;
+}
+
+
+.avatar-large ng-template,
+.avatar-large {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.profile-card h2 {
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
+  font-family: inherit;
+  margin-bottom: 5px;
+  color: #FFFFFF;
+}
+
+.email, .phone, .gender, .country {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 5px;
+}
+
+.country {
+  margin-bottom: 30px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  gap: 16px;
+}
+
+.stat-box {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  background: #142F4F;
+  border: 1px solid #1E3A52;
+  border-radius: 15px;
+  padding: 18px 16px;
+  text-align: center;
+}
+
+.stat-box h3 {
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #00E5FF;
+  margin: 0 0 6px 0;
+
+}
+
+.stat-box span {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.7);
+  display: block;
+  word-break: break-word;
+
+}
+
+.edit-btn {
+  padding: 14px 38px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  background: linear-gradient(90deg, #00E5FF, #007AFF);
+  transition: 0.3s;
+}
+
+.edit-btn:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .stats {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .profile-card {
+    width: 100%;
+  }
+}

@@ -1,0 +1,162 @@
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+.no-results{
+  text-align:center;
+  margin-top:80px;
+  color:#8BA0B8;
+  font-size:16px;
+  font-family: system-ui;
+}
+
+.no-results span{
+  display:block;
+  margin-top:10px;
+  font-size:14px;
+  color:#8BA0B8;
+}
+
+
+.trips-page{
+  padding-top:30px;
+}
+
+
+.title{
+  font-size:28px;
+  font-weight:700;
+  margin-bottom:25px;
+  font-family: inherit;
+  color: #FFFFFF;
+}
+
+
+.trip-card{
+  background:#112240;
+  border: 1px solid #1E3A52;
+  border-radius:14px;
+  padding:22px;
+  margin-bottom:20px;
+  box-shadow:0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+
+.trip-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.route{
+  font-size:18px;
+  font-weight:600;
+  font-family: inherit;
+  color: #FFFFFF;
+}
+
+.arrow{
+  margin:0 8px;
+  color:#00B1DF;
+}
+
+.price{
+  font-size:22px;
+  font-weight:700;
+  color:#00E5FF;
+  font-family: inherit;
+}
+
+
+.trip-details{
+  display:flex;
+  flex-wrap: wrap;
+  gap:22px;
+  font-size:14px;
+  color:#8BA0B8;
+  margin-bottom:15px;
+  font-family: inherit;
+}
+
+.trip-meta-row,
+.trip-station-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 12px;
+  color: #8BA0B8;
+  font-size: 13px;
+  line-height: 20px;
+  font-family: inherit;
+}
+
+.trip-classes,
+.trip-stops {
+  margin-bottom: 14px;
+}
+
+.trip-classes h4,
+.trip-stops h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: #FFFFFF;
+  font-family: inherit;
+}
+
+.class-list,
+.stops-list {
+  display: grid;
+  gap: 8px;
+}
+
+.class-item,
+.stop-item {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  background: #1A3045;
+  border: 1px solid #1E3A52;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #8BA0B8;
+  font-family: inherit;
+}
+
+
+.trip-footer{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.seats{
+  background:#2A3F5A;
+  color:#40E0D0;
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:13px;
+  font-family: inherit;
+}
+
+
+.select-btn{
+  background: linear-gradient(90deg, #00E5FF, #007AFF);
+  color:#FFFFFF;
+  border:none;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:500;
+  transition:0.2s;
+  font-family: inherit;
+}
+
+.select-btn:hover{
+  opacity: 0.9;
+}

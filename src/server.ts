@@ -4,13 +4,42 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
+import 'dotenv/config';
 import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { join } from 'node:path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+const apiProxyTarget = process.env['API_PROXY_TARGET'];
+
+// Proxy API calls during SSR/prerender so relative `/api/*` requests reach the backend.
+// Configure the backend URL via `API_PROXY_TARGET` (example: http://localhost:5000).
+if (apiProxyTarget) {
+  app.use(
+    '/api',
+    createProxyMiddleware({
+      target: apiProxyTarget,
+      changeOrigin: true,
+      secure: false,
+      pathRewrite: (path) => `/api${path}`,
+    }),
+  );
+} else {
+  app.use('/api', (req, res) => {
+    res.status(502).json({
+      success: false,
+      message:
+        'API proxy target is not configured. Set API_PROXY_TARGET (e.g. http://localhost:5000) before running SSR/prerender.',
+      data: null,
+      errors: ['API_PROXY_TARGET is missing'],
+      timestamp: new Date().toISOString(),
+    });
+  });
+}
 
 /**
  * Example Express Rest API endpoints can be defined here.

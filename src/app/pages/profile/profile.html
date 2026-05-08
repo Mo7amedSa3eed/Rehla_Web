@@ -1,0 +1,52 @@
+<div class="container">
+  <div class="profile-wrapper">
+
+    <div class="profile-card">
+      
+    <div class="avatar-large">
+
+      <img *ngIf="user.photo; else defaultIcon"
+          [src]="user.photo"
+          class="avatar-img"/>
+
+      <ng-template #defaultIcon>
+        👤
+      </ng-template>
+
+    </div>
+
+      <h2>{{ fullName }}</h2>
+      <p class="email">Email: {{ user.email }}</p>
+      <p *ngIf="user.phone" class="phone">📞 Phone: {{ user.phone }}</p>
+      <p *ngIf="user.gender" class="gender">👤 Gender: {{ user.gender }}</p>
+      <p *ngIf="user.country" class="country">📍 Country: {{ user.country }} ({{ user.countryCode }})</p>
+
+      <div class="stats">
+
+        <div class="stat-box">
+          <h3>{{ user.totalTrips }}</h3>
+          <span>Total Trips</span>
+        </div>
+
+        <div class="stat-box">
+          <h3>{{ user.totalDistanceTraveled | number }} km</h3>
+          <span>Total Distance</span>
+        </div>
+
+        <div class="stat-box">
+          <h3>{{ user.walletBalance | number:'1.0-2' }} EGP</h3>
+          <span>Wallet Balance</span>
+        </div>
+
+      </div>
+
+      <button class="edit-btn btn btn-primary" routerLink="/edit-profile">
+        Edit Profile
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
+

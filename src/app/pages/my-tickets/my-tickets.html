@@ -1,0 +1,165 @@
+<div class="tickets-page">
+
+  <h2>My Tickets</h2>
+
+
+  <div class="tabs">
+    <button
+      class="btn"
+      [class.active]="view === 'resell'"
+      (click)="view = 'resell'">
+      ✏️ Resell Tickets
+    </button>
+
+    <button
+      class="btn"
+      [class.active]="view === 'marketplace'"
+      (click)="view = 'marketplace'">
+      🏪 Ticket Marketplace
+    </button>
+  </div>
+
+
+  <div *ngIf="view === 'resell'">
+
+    <div *ngIf="state.myTickets.length === 0" class="no-results">
+    <p>No tickets to display.</p>
+    <span>Use My Bookings page to buy a Tickets.</span>
+    </div>
+
+    <div
+      class="ticket-card card"
+      *ngFor="let ticket of state.myTickets">
+
+      <h3>{{ticket.from}} → {{ticket.to}}</h3>
+
+      <div class="ticket-grid">
+
+        <div>
+          <p class="label">📅 Date</p>
+          <p>{{ticket.date}}</p>
+        </div>
+
+        <div>
+          <p class="label">⏰ Time</p>
+          <p>{{ticket.time}}</p>
+        </div>
+
+        <div>
+          <p class="label">🚆 Transport</p>
+          <p>Train</p>
+        </div>
+
+        <div>
+          <p class="label">👤 Passengers</p>
+          <p>{{ticket.passengers}} Passenger(s)</p>
+        </div>
+
+        <div>
+          <p class="label">🎟 Ticket ID</p>
+          <p>TCK-{{ticket.ticketId}}</p>
+        </div>
+
+        <div>
+          <p class="label">💺 Seat</p>
+          <p>{{ticket.seat}}</p>
+        </div>
+
+      </div>
+      
+      <div class="price-section">
+
+        <p class="old-price">
+          Original: ${{ticket.originalPrice || ticket.price}}
+        </p>
+
+        <p class="new-price">
+          Resell Price (10% off): ${{(ticket.price * 0.9) | number:'1.2-2'}}
+        </p>
+
+      </div>
+
+      <button
+        class="resell-btn btn"
+        (click)="resellTicket(ticket)">
+        Resell Ticket
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div *ngIf="view === 'marketplace'">
+
+    <div *ngIf="state.marketplace.length === 0" class="no-results">
+    <p>No tickets to display.</p>
+    </div>
+
+    <div
+      class="ticket-card marketplace card"
+      *ngFor="let ticket of state.marketplace">
+
+      <div class="sold-label">
+        Resold Ticket
+      </div>
+
+      <h3>{{ticket.from}} → {{ticket.to}}</h3>
+
+      <div class="ticket-grid">
+
+        <div>
+          <p class="label">📅 Date</p>
+          <p>{{ticket.date}}</p>
+        </div>
+
+        <div>
+          <p class="label">⏰ Time</p>
+          <p>{{ticket.time}}</p>
+        </div>
+
+        <div>
+          <p class="label">🚆 Transport</p>
+          <p>Train</p>
+        </div>
+
+        <div>
+          <p class="label">👤 Passengers</p>
+          <p>{{ticket.passengers}} Passenger(s)</p>
+        </div>
+
+        <div>
+          <p class="label">🎟 Ticket ID</p>
+          <p>TCK-{{ticket.ticketId}}</p>
+        </div>
+
+        <div>
+          <p class="label">💺 Seat</p>
+          <p>{{ticket.seat}}</p>
+        </div>
+
+      </div>
+
+      <div class="price-section">
+
+        <p class="old-price">
+          Original: ${{ticket.originalPrice}}
+        </p>
+
+        <p class="new-price">
+          Now: ${{ticket.price | number:'1.2-2'}}
+        </p>
+
+        <button
+          class="buy-btn btn btn-primary"
+          (click)="buyTicket(ticket)">
+          Buy Ticket
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

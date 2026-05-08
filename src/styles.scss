@@ -1,1 +1,131 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  --dark-blue: #0E2255;
+  --middle-blue: #142C6C;
+  --light-blue: #1A327A;
+  --bright-blue: #2089FF;
+  --cyan-blue: #00B1DF;
+  --button-blue: #007AFF;
+  --accent-cyan: #00E5FF;
+  --turquoise: #40E0D0;
+  --success-green: #00C853;
+  --search-bg: #0A1628;
+  --card-bg: #112240;
+  --surface-dark: #0F1B2D;
+  --surface-darker: #0D1B2A;
+  --surface-mid: #1A2E4A;
+  --surface-chip: #1A3045;
+  --section-card-bg: #142F4F;
+  --border-subtle: #1E3A52;
+  --border-dim: #1E3050;
+  --text-muted: #8BA0B8;
+  --badge-bg: #2A3F5A;
+  --nav-bar-bg: #1B357D;
+  --nav-bar-border: #255A91;
+  --nav-bar-active-bg: #2C6196;
+  --nav-bar-active-border: #3180A4;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: linear-gradient(180deg, var(--dark-blue), var(--middle-blue), var(--light-blue));
+  color: #FFFFFF;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: #FFFFFF;
+  background: var(--surface-dark);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--cyan-blue);
+  box-shadow: 0 0 0 2px rgba(0, 177, 223, 0.2);
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+
+.block-container {
+  margin: 10px;
+  padding: 24px 16px;
+  border-radius: 16px;
+  border: 1px solid #20538D;
+  background: linear-gradient(180deg, #142A68, #183176);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  color: #FFFFFF;
+  background: var(--surface-chip);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.btn:hover {
+  border-color: var(--nav-bar-active-border);
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--accent-cyan), var(--button-blue));
+  border: none;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--cyan-blue);
+  color: var(--cyan-blue);
+}
+
+.chip {
+  background: var(--surface-chip);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
