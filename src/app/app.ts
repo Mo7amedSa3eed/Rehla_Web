@@ -33,8 +33,8 @@ export class App {
       url.startsWith('/signup?') ||
       url === '/login' ||
       url.startsWith('/login?') ||
-      url === '/auth-info' ||
-      url.startsWith('/auth-info?');
+        url === '/welcome' ||
+        url.startsWith('/welcome?');
   }
 
 }

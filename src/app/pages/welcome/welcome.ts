@@ -3,10 +3,10 @@ import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-auth-info',
+  selector: 'app-welcome',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './auth-info.html',
-  styleUrls: ['./auth-info.scss']
+  templateUrl: './welcome.html',
+  styleUrls: ['./welcome.scss']
 })
-export class AuthInfoComponent {}
+export class WelcomeComponent {}
