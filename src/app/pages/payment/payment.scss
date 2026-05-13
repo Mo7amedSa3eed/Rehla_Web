@@ -122,3 +122,30 @@
     border: 1px solid #1E3A52;
   }
 }
+
+@media (max-width: 900px) {
+  .payment-page {
+    margin: 20px 16px;
+    padding: 16px;
+  }
+
+  .payment-card {
+    padding: 20px;
+  }
+
+  .summary .row,
+  .summary .total {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .payment-method .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .buttons {
+    flex-direction: column;
+  }
+}

@@ -111,3 +111,22 @@
 .pay-btn:hover{
   opacity: 0.9;
 }
+
+@media (max-width: 900px) {
+  .bookings {
+    margin: 20px 16px;
+  }
+
+  .bookings h2 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .booking-card {
+    padding: 18px;
+  }
+
+  .booking-grid {
+    grid-template-columns: 1fr;
+  }
+}

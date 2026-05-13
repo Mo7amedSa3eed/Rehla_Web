@@ -382,8 +382,8 @@ export interface LoyaltyChallengesPagedDto {
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  // Use a relative base so SSR/client both hit the same origin (configure proxy if backend is elsewhere).
-  private readonly baseUrl = '/api';
+  // Use the shared production/development backend base URL.
+  private readonly baseUrl = 'https://rehlabussines2-001-site1.anytempurl.com/api';
 
   constructor(private readonly http: HttpClient) {}
 

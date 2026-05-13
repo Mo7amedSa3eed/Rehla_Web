@@ -74,3 +74,28 @@ h2{
   border-radius:6px;
   cursor:pointer;
 }
+
+@media (max-width: 900px) {
+  .marketplace {
+    padding: 16px;
+  }
+
+  .ticket-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ticket-info {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .price-section {
+    flex-wrap: wrap;
+  }
+
+  .buy-btn {
+    margin-left: 0;
+  }
+}

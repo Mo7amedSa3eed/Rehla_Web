@@ -268,3 +268,41 @@
   opacity:0.9;
   transform: translateY(-1px);
 }
+
+@media (max-width: 900px) {
+  .booking-page {
+    padding: 0 16px 20px;
+  }
+
+  .hero {
+    padding: 20px;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+    line-height: 40px;
+  }
+
+  .hero p {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .booking-card {
+    padding: 22px;
+  }
+
+  .transport-grid,
+  .agency-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-group {
+    width: 100%;
+  }
+}

@@ -148,4 +148,44 @@
     flex-direction: column;
     gap: 12px;
   }
+
+  .hero {
+    padding: 20px;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+    line-height: 40px;
+  }
+
+  .hero p {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .card-section {
+    padding: 24px;
+  }
+
+  .why-item {
+    flex-direction: column;
+  }
+
+  .bottom-cta {
+    padding: 40px 16px;
+  }
+
+  .bottom-cta h2 {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .bottom-cta p {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .bottom-cta button {
+    width: 100%;
+  }
 }

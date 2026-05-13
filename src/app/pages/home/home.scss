@@ -154,4 +154,38 @@
     gap: 15px;
     text-align: center;
   }
+
+  .hero {
+    padding: 20px;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+    line-height: 40px;
+  }
+
+  .hero p {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .icon {
+    width: 68px;
+    height: 68px;
+    font-size: 26px;
+  }
+
+  .cta {
+    padding: 40px 16px;
+  }
+
+  .cta h2 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .cta p {
+    font-size: 16px;
+    line-height: 24px;
+  }
 }

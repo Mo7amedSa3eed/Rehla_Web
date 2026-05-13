@@ -165,3 +165,35 @@ h2{
   border-radius:6px;
   cursor:pointer;
 }
+
+@media (max-width: 900px) {
+  .tickets-page {
+    padding: 0 16px 20px;
+  }
+
+  h2 {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .ticket-card {
+    padding: 18px;
+  }
+
+  .ticket-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .price-section {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .buy-btn {
+    margin-left: 0;
+  }
+}

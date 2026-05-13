@@ -160,3 +160,26 @@
 .select-btn:hover{
   opacity: 0.9;
 }
+
+@media (max-width: 900px) {
+  .container {
+    padding: 16px;
+  }
+
+  .trip-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .trip-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .class-item,
+  .stop-item {
+    grid-template-columns: 1fr;
+  }
+}
