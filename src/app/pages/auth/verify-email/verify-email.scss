@@ -1,0 +1,136 @@
+.auth-page {
+	min-height: calc(100vh - 120px);
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 60px 16px 40px;
+}
+
+.auth-card {
+	width: min(640px, 100%);
+	padding: 40px;
+	border-radius: 20px;
+	background: linear-gradient(180deg, rgba(12, 34, 68, 0.96), rgba(23, 52, 94, 0.96));
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+	color: #ffffff;
+	display: flex;
+	flex-direction: column;
+	min-height: fit-content;
+}
+
+.auth-header {
+	margin-bottom: 28px;
+}
+
+.auth-badge {
+	display: inline-block;
+	padding: 6px 12px;
+	border-radius: 999px;
+	background: rgba(0, 229, 255, 0.15);
+	color: #00e5ff;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	margin-bottom: 12px;
+}
+
+.auth-header h1 {
+	margin: 0 0 12px;
+	font-size: 32px;
+	line-height: 1.15;
+	font-weight: 700;
+}
+
+.auth-header p {
+	margin: 0;
+	color: rgba(255, 255, 255, 0.68);
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+.loading-state {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	color: rgba(255, 255, 255, 0.84);
+	min-height: 56px;
+	margin: 20px 0;
+}
+
+.spinner {
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	border: 3px solid rgba(255, 255, 255, 0.18);
+	border-top-color: #00e5ff;
+	animation: spin 0.9s linear infinite;
+}
+
+.feedback {
+	border-radius: 14px;
+	padding: 14px 16px;
+	margin-bottom: 20px;
+	font-weight: 600;
+	font-size: 15px;
+}
+
+.feedback.success {
+	background: rgba(10, 138, 0, 0.12);
+	color: #7dff8a;
+	border: 1px solid rgba(125, 255, 138, 0.24);
+}
+
+.feedback.error {
+	background: rgba(180, 35, 24, 0.14);
+	color: #ffb0a6;
+	border: 1px solid rgba(255, 176, 166, 0.24);
+}
+
+.primary-btn {
+	border: none;
+	border-radius: 14px;
+	padding: 14px 28px;
+	font-size: 15px;
+	font-weight: 700;
+	color: #001018;
+	background: linear-gradient(90deg, #00e5ff, #7cf0ff);
+	cursor: pointer;
+	transition: transform 0.2s ease, opacity 0.2s ease;
+	margin-top: 8px;
+}
+
+.primary-btn:hover {
+	transform: translateY(-1px);
+}
+
+.back-link {
+	display: inline-block;
+	margin-top: auto;
+	padding-top: 16px;
+	color: var(--accent-cyan);
+	text-decoration: none;
+	font-size: 14px;
+	transition: all 0.2s ease;
+}
+
+.back-link:hover {
+	text-decoration: underline;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (max-width: 576px) {
+	.auth-card {
+		padding: 24px 18px;
+		border-radius: 20px;
+	}
+
+	.auth-header h1 {
+		font-size: 24px;
+	}
+}

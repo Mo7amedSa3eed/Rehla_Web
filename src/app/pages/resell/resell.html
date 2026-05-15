@@ -1,16 +1,66 @@
-<!-- <h2>Resell Ticket</h2>
+<div class="resell-page">
+  <h2>Resell Ticket</h2>
 
-<div class="resell-card">
+  <div *ngIf="isLoading" class="resell-card">
+    <p>Loading ticket details...</p>
+  </div>
 
-  <p>Original Price: ${{ticket?.price}}</p>
+  <div *ngIf="!isLoading && loadError" class="resell-card error-card">
+    <p>{{ loadError }}</p>
+    <button class="resell-btn btn" (click)="cancel()">Back to My Tickets</button>
+  </div>
 
-  <p>
-    Resell Price (10% off):
-    <strong>${{resellPrice}}</strong>
-  </p>
+  <div *ngIf="!isLoading && ticket" class="resell-card">
+    <h3>{{ ticket.from }} → {{ ticket.to }}</h3>
 
-  <button (click)="sellTicket()">
-    Resell Ticket
-  </button>
+    <div class="ticket-grid">
+      <div>
+        <p class="label">📅 Date</p>
+        <p>{{ ticket.date }}</p>
+      </div>
 
-</div> -->
+      <div>
+        <p class="label">⏰ Time</p>
+        <p>{{ ticket.time }}</p>
+      </div>
+
+      <div>
+        <p class="label">👤 Passengers</p>
+        <p>{{ ticket.passengers }} Passenger(s)</p>
+      </div>
+
+      <div>
+        <p class="label">🎟 Ticket ID</p>
+        <p>TCK-{{ ticket.ticketId }}</p>
+      </div>
+
+      <div>
+        <p class="label">💺 Seat</p>
+        <p>{{ ticket.seat }}</p>
+      </div>
+    </div>
+
+    <div class="price-section">
+      <p class="old-price">Original: ${{ (ticket.originalPrice || ticket.price) | number:'1.2-2' }}</p>
+
+      <label for="askingPrice" class="label">Resale Price</label>
+      <input
+        id="askingPrice"
+        type="number"
+        min="1"
+        step="0.01"
+        [(ngModel)]="askingPrice"
+      />
+    </div>
+
+    <div class="actions">
+      <button class="resell-btn btn" (click)="sellTicket()" [disabled]="isSaving">
+        {{ isSaving ? 'Listing...' : 'Resell Ticket' }}
+      </button>
+
+      <button class="btn secondary-btn" (click)="cancel()" [disabled]="isSaving">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>

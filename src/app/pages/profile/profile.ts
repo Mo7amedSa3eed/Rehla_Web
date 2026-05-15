@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../../services/state';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
@@ -12,7 +12,16 @@ import { RouterModule } from '@angular/router';
 })
 export class ProfileComponent implements OnInit {
 
-  constructor(public state: AppStateService) {}
+  constructor(public state: AppStateService, private readonly router: Router) {}
+
+  logout(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    }
+
+    void this.router.navigate(['/login']);
+  }
 
   async ngOnInit(): Promise<void> {
     await this.state.loadProfile().catch(() => undefined);

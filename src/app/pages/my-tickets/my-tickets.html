@@ -2,6 +2,15 @@
 
   <h2>My Tickets</h2>
 
+  <div *ngIf="isLoading" class="no-results">
+    <p>Loading tickets...</p>
+  </div>
+
+  <div *ngIf="!isLoading && loadError" class="no-results">
+    <p>{{ loadError }}</p>
+    <span>Please refresh and try again.</span>
+  </div>
+
 
   <div class="tabs">
     <button
@@ -20,7 +29,7 @@
   </div>
 
 
-  <div *ngIf="view === 'resell'">
+  <div *ngIf="!isLoading && !loadError && view === 'resell'">
 
     <div *ngIf="resellTickets.length === 0" class="no-results">
     <p>No tickets to display.</p>
@@ -90,7 +99,7 @@
   </div>
 
 
-  <div *ngIf="view === 'marketplace'">
+  <div *ngIf="!isLoading && !loadError && view === 'marketplace'">
 
     <div *ngIf="marketplaceTickets.length === 0" class="no-results">
     <p>No tickets to display.</p>

@@ -1,0 +1,26 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-badge">Account verification</div>
+      <h1>Verify your email</h1>
+      <p>We are checking the verification link sent to your inbox.</p>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <span>Verifying your email address...</span>
+    </div>
+
+    <ng-container *ngIf="!isLoading">
+      <div [class.success]="success" [class.error]="!success" class="feedback">
+        {{ message }}
+      </div>
+
+      <button class="primary-btn" type="button" (click)="goLogin()">
+        Go to Login
+      </button>
+
+      <a class="back-link" routerLink="/login">Back to login</a>
+    </ng-container>
+  </div>
+</div>

@@ -11,18 +11,34 @@ import { AppStateService } from '../../services/state';
   styleUrls: ['./my-bookings.scss']
 })
 export class MyBookingsComponent implements OnInit {
+  isLoading = true;
+  loadError = '';
 
   constructor(public state: AppStateService, private router: Router) {}
 
   async ngOnInit(): Promise<void> {
-    await this.state.loadBookings().catch(() => undefined);
+    await this.refreshBookings();
   }
 
-  payNow(booking:any){
+  async refreshBookings(): Promise<void> {
+    this.isLoading = true;
+    this.loadError = '';
 
+    try {
+      await Promise.all([
+        this.state.loadProfile().catch(() => undefined),
+        this.state.loadBookings(),
+      ]);
+    } catch (error) {
+      this.loadError = error instanceof Error ? error.message : 'Failed to load bookings';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async payNow(booking: any): Promise<void> {
     this.state.currentPaymentBooking = booking;
-
-    this.router.navigate(['/payment']);
+    await this.router.navigate(['/payment']);
 
   }
 
@@ -34,6 +50,7 @@ export class MyBookingsComponent implements OnInit {
 
     try {
       await this.state.cancelCartHold(bookingId);
+      await this.refreshBookings();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to cancel hold';
       alert(message);

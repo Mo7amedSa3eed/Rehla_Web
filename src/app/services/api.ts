@@ -230,12 +230,15 @@ export interface ActiveCartDto {
 
 export interface TicketDto {
   bookingId: number;
+  ownerId?: number;
   status: string;
   paymentStatus: string;
   totalPrice: number;
   seatsBooked: number;
   bookingDate: string;
   isMarketplacePurchase?: boolean;
+  isOfferedForResale?: boolean;
+  activeListingId?: number | null;
   agencyName: string;
   className: string;
   originStation: string;
@@ -335,6 +338,7 @@ export interface MarketplaceTripDetailsDto {
 
 export interface MarketplaceListingDto {
   listingId: number;
+  ownerId?: number;
   originalPrice: number;
   askingPrice: number;
   sellerName: string;
@@ -701,6 +705,14 @@ export class ApiService {
       .pipe(map((response) => {
         this.unwrap(response);
       }));
+  }
+
+  updateTicketStatus(payload: MarketplaceListRequest): Observable<void> {
+    return this.listTicketOnMarketplace(payload);
+  }
+
+  transferOwnership(listingId: number): Observable<void> {
+    return this.buyMarketplaceTicket(listingId);
   }
 
   buyMarketplaceTicket(listingId: number): Observable<void> {

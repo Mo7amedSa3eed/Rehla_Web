@@ -1,0 +1,42 @@
+<div class="confirm-page" *ngIf="booking as ticket">
+  <div class="confirm-card card">
+    <p class="eyebrow">Marketplace Purchase</p>
+    <h2>Review your ticket before buying</h2>
+
+    <div class="summary-grid">
+      <div>
+        <span class="label">Route</span>
+        <p>{{ ticket.from }} → {{ ticket.to }}</p>
+      </div>
+      <div>
+        <span class="label">Travel Date</span>
+        <p>{{ ticket.date }}</p>
+      </div>
+      <div>
+        <span class="label">Time</span>
+        <p>{{ ticket.time }}</p>
+      </div>
+      <div>
+        <span class="label">Passengers</span>
+        <p>{{ ticket.passengers }}</p>
+      </div>
+      <div>
+        <span class="label">Original Price</span>
+        <p>{{ ticket.originalPrice | number:'1.2-2' }} EGP</p>
+      </div>
+      <div>
+        <span class="label">Resale Price</span>
+        <p class="price">{{ ticket.price | number:'1.2-2' }} EGP</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" [disabled]="isSubmitting" (click)="confirmPurchase()">
+        {{ isSubmitting ? 'Processing...' : 'Confirm Purchase' }}
+      </button>
+      <button class="btn btn-outline" type="button" (click)="cancel()">Cancel</button>
+    </div>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </div>
+</div>

@@ -14,7 +14,7 @@ import { filter } from 'rxjs/operators';
 export class App {
 
   view: '/booking' | '/trips' | '/my-bookings'| '/my-tickets' = '/booking';
-  isSignupPage = false;
+  showShellChrome = true;
 
   constructor(
     public state: AppStateService,
@@ -28,13 +28,16 @@ export class App {
   }
 
   private updateRouteState(url: string): void {
-    this.isSignupPage =
-      url === '/signup' ||
-      url.startsWith('/signup?') ||
-      url === '/login' ||
-      url.startsWith('/login?') ||
-        url === '/welcome' ||
-        url.startsWith('/welcome?');
+    const normalizedUrl = url.split('?')[0];
+
+    this.showShellChrome = ![
+      '/signup',
+      '/login',
+      '/welcome',
+      '/auth/forgot-password',
+      '/auth/reset-password',
+      '/auth/verify-email',
+    ].includes(normalizedUrl);
   }
 
 }

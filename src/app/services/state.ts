@@ -15,6 +15,7 @@ import {
 } from './api';
 
 export interface UserProfile {
+  userId: number;
   firstName: string;
   familyName: string;
   lastName: string;
@@ -63,6 +64,7 @@ export interface UiTrip {
 export interface UiBooking {
   id: number;
   ticketId: number;
+  ownerId?: number;
   from: string;
   to: string;
   date: string;
@@ -79,6 +81,7 @@ export interface UiBooking {
 export interface MarketplaceListing {
   listingId: number;
   ticketId: number;
+  ownerId?: number;
   from: string;
   to: string;
   date: string;
@@ -102,6 +105,7 @@ export class AppStateService {
   ) {}
 
   userProfile: UserProfile = {
+    userId: 0,
     firstName: 'Mohamed',
     familyName: '',
     lastName: 'Saeed',
@@ -287,7 +291,7 @@ export class AppStateService {
     }
 
     await firstValueFrom(
-      this.api.listTicketOnMarketplace({
+      this.api.updateTicketStatus({
         bookingId: ticket.id,
         askingPrice,
       }),
@@ -318,14 +322,48 @@ export class AppStateService {
   }
 
   async buyMarketplaceListing(listingId: number): Promise<void> {
+    await this.completeMarketplacePurchase(listingId);
+  }
+
+  prepareMarketplacePurchase(listing: MarketplaceListing): void {
+    const bookingId = listing.listingId ?? listing.ticketId;
+
+    this.currentPaymentBooking = {
+      id: bookingId,
+      ticketId: listing.ticketId,
+      ownerId: listing.ownerId,
+      from: listing.from,
+      to: listing.to,
+      date: listing.date,
+      time: listing.time,
+      duration: listing.duration,
+      passengers: listing.passengers,
+      price: listing.price,
+      originalPrice: listing.originalPrice,
+      status: 'pending',
+      seat: listing.seat,
+    };
+
+    this.buyingMarketplaceTicketId = listing.listingId;
+  }
+
+  async completeMarketplacePurchase(listingId?: number): Promise<void> {
     if (!this.isBrowser()) {
       return;
     }
 
-    await firstValueFrom(this.api.buyMarketplaceTicket(listingId));
+    const targetListingId = listingId ?? this.buyingMarketplaceTicketId;
+    if (typeof targetListingId !== 'number') {
+      throw new Error('No marketplace ticket selected for purchase.');
+    }
+
+    await firstValueFrom(this.api.transferOwnership(targetListingId));
     await this.loadMarketplace().catch(() => undefined);
     await this.loadTickets().catch(() => undefined);
     await this.loadBookings().catch(() => undefined);
+
+    this.currentPaymentBooking = null;
+    this.buyingMarketplaceTicketId = null;
   }
 
   async cancelCartHold(bookingId: number): Promise<void> {
@@ -488,12 +526,27 @@ export class AppStateService {
 
   private mapTicketToUiBooking(ticket: TicketDto): UiBooking {
     const boardingDate = new Date(ticket.boardingTime);
-    const isConfirmed = ticket.status?.toLowerCase() === 'confirmed';
-    const canResell = isConfirmed && !ticket.isMarketplacePurchase;
+    const normalizedStatus = ticket.status?.toLowerCase();
+    const status: UiBooking['status'] =
+      normalizedStatus === 'confirmed'
+        ? 'confirmed'
+        : normalizedStatus === 'pending-sale'
+          ? 'pending-sale'
+          : normalizedStatus === 'sold'
+            ? 'sold'
+            : normalizedStatus === 'cancelled'
+              ? 'cancelled'
+              : 'pending';
+    const canResell =
+      status === 'confirmed' &&
+      !ticket.isMarketplacePurchase &&
+      !ticket.isOfferedForResale &&
+      ticket.activeListingId == null;
 
     return {
       id: ticket.bookingId,
       ticketId: ticket.bookingId,
+      ownerId: ticket.ownerId,
       from: ticket.originStation,
       to: ticket.destinationStation,
       date: boardingDate.toLocaleDateString('en-US', {
@@ -509,7 +562,7 @@ export class AppStateService {
       passengers: ticket.seatsBooked,
       price: ticket.totalPrice,
       originalPrice: ticket.totalPrice,
-      status: isConfirmed ? 'confirmed' : 'pending',
+      status,
       seat: ticket.passengers.map((passenger) => passenger.seatNumber).join(', '),
       canResell,
     };
@@ -591,6 +644,7 @@ export class AppStateService {
 
   private mapProfileToUi(profile: UserProfileDto): UserProfile {
     return {
+      userId: profile.userId,
       firstName: profile.firstName,
       familyName: profile.familyName ?? '',
       lastName: profile.lastName,
@@ -628,6 +682,7 @@ export class AppStateService {
       return {
         listingId: listing.listingId,
         ticketId: listing.listingId,
+        ownerId: listing.ownerId,
         from: listing.tripDetails.origin,
         to: listing.tripDetails.destination,
         date: dateLabel,

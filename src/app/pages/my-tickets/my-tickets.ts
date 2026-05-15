@@ -13,12 +13,30 @@ import { AppStateService, MarketplaceListing, UiBooking } from '../../services/s
 export class MyTicketsComponent implements OnInit {
 
   view: 'resell' | 'marketplace' = 'resell';
+  isLoading = true;
+  loadError = '';
 
 constructor(public state: AppStateService, private router: Router) {}
 
   async ngOnInit(): Promise<void> {
-    await this.state.loadTickets().catch(() => undefined);
-    await this.state.loadMarketplace().catch(() => undefined);
+    await this.refreshTickets();
+  }
+
+  async refreshTickets(): Promise<void> {
+    this.isLoading = true;
+    this.loadError = '';
+
+    try {
+      await Promise.all([
+        this.state.loadProfile().catch(() => undefined),
+        this.state.loadTickets(),
+        this.state.loadMarketplace(),
+      ]);
+    } catch (error) {
+      this.loadError = error instanceof Error ? error.message : 'Failed to load tickets';
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   get resellTickets(): UiBooking[] {
@@ -32,6 +50,10 @@ constructor(public state: AppStateService, private router: Router) {}
   }
 
   private isOwnListing(ticket: { sellerName?: string }): boolean {
+    if (typeof (ticket as { ownerId?: number }).ownerId === 'number' && (ticket as { ownerId?: number }).ownerId === this.state.userProfile.userId) {
+      return true;
+    }
+
     const currentName = this.getCurrentUserName();
     if (!currentName || !ticket.sellerName) {
       return false;
@@ -67,19 +89,12 @@ constructor(public state: AppStateService, private router: Router) {}
   }
 
   async resellTicket(ticket: any): Promise<void> {
-    const askingPrice = Number(ticket.price) * 0.9;
-
     if (!confirm('Are you sure you want to list this ticket for sale?')) {
       return;
     }
 
-    try {
-      await this.state.listTicketForResale(ticket, askingPrice);
-      this.view = 'marketplace';
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to list ticket for resale';
-      alert(message);
-    }
+    this.state.selectedTicket = ticket;
+    await this.router.navigate(['/resell'], { state: { ticket } });
   }
 
  buyTicket(ticket: any){
@@ -87,31 +102,8 @@ constructor(public state: AppStateService, private router: Router) {}
     return;
   }
 
-  const fallbackId = ticket.ticketId ?? ticket.id ?? Date.now();
-
-  const booking: UiBooking = {
-    id: fallbackId,
-    ticketId: fallbackId,
-    from: ticket.from,
-    to: ticket.to,
-    date: ticket.date,
-    time: ticket.time,
-    duration: ticket.duration || '',
-    passengers: ticket.passengers || 1,
-    seat: ticket.seat,
-    originalPrice: ticket.originalPrice,
-    price: ticket.resellPrice || ticket.price,
-    status: 'pending'
-  };
-
-  // store ticket that user wants to buy
-  this.state.currentPaymentBooking = booking;
-
-  // store marketplace ticket id to remove later
-  this.state.buyingMarketplaceTicketId = ticket.listingId ?? ticket.id;
-
-  // go to payment page
-  this.router.navigate(['/payment']);
+  this.state.prepareMarketplacePurchase(ticket);
+  this.router.navigate(['/marketplace-confirm']);
 }
 
 }

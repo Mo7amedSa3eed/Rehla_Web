@@ -33,6 +33,9 @@
 
       <div class="form-actions">
         <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <div class="helper-text helper-text-right">
+          <a routerLink="/auth/forgot-password">Forgot password?</a>
+        </div>
         <button
           class="btn btn-primary"
           type="submit"

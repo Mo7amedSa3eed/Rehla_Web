@@ -127,9 +127,9 @@
   border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  background: #1A3045;
-  border: 1px solid #1E3A52;
+  color: #FFFFFF;
+  background: linear-gradient(90deg, #00E5FF, #007AFF);
+  border-color: #3180A4;
   cursor: pointer;
   transition: 0.3s;
 }
@@ -138,6 +138,25 @@
   transform: translateY(-2px);
   color: #FFFFFF;
   border-color: #3180A4;
+}
+
+.logout-btn {
+  display: block;
+  margin: 18px auto 0;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: linear-gradient(90deg, #00E5FF, #007AFF);
+  border-color: #3180A4;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px);
+  background: #d92d20;
 }
 
 @media (max-width: 768px) {

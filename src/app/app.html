@@ -1,4 +1,4 @@
-<nav class="navbar" *ngIf="!isSignupPage">
+<nav class="navbar" *ngIf="showShellChrome">
   <div class="container nav-content">
 
     <div class="logo">
@@ -29,7 +29,7 @@
 </nav>
 
 
-<div class="container" *ngIf="!isSignupPage">
+<div class="container" *ngIf="showShellChrome">
   <div class="sub-nav">
     <button class="btn" routerLink="/booking" routerLinkActive="active-nav">
       🎫 Book Trip

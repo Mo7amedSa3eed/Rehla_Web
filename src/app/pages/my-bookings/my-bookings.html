@@ -2,7 +2,16 @@
 
   <h2>My Bookings</h2>
 
-  <div *ngIf="state.bookings.length === 0" class="no-results">
+  <div *ngIf="isLoading" class="no-results">
+    <p>Loading bookings...</p>
+  </div>
+
+  <div *ngIf="!isLoading && loadError" class="no-results">
+    <p>{{ loadError }}</p>
+    <span>Please try again after refreshing your session.</span>
+  </div>
+
+  <div *ngIf="!isLoading && !loadError && state.bookings.length === 0" class="no-results">
   <p>No bookings to display.</p>
   <span>Use the Available Trips page to select available trips first.</span>
   </div>
@@ -25,7 +34,7 @@
   <div
     class="status pending-sale"
     *ngIf="booking.status === 'pending-sale'">
-    ⏳ Pending Sale
+    🏷️ Offered for sale
   </div>
 
 
