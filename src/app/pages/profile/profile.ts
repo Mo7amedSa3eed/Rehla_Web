@@ -32,7 +32,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get fullName() {
-    return [this.user.firstName, this.user.familyName, this.user.lastName]
+    return [this.user.firstName, this.user.lastName, this.user.familyName]
       .filter((value) => value && value.trim().length > 0)
       .join(' ')
       .trim();
