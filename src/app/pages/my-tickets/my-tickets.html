@@ -22,14 +22,14 @@
 
   <div *ngIf="view === 'resell'">
 
-    <div *ngIf="state.myTickets.length === 0" class="no-results">
+    <div *ngIf="resellTickets.length === 0" class="no-results">
     <p>No tickets to display.</p>
     <span>Use My Bookings page to buy a Tickets.</span>
     </div>
 
     <div
       class="ticket-card card"
-      *ngFor="let ticket of state.myTickets">
+      *ngFor="let ticket of resellTickets">
 
       <h3>{{ticket.from}} → {{ticket.to}}</h3>
 
@@ -92,13 +92,13 @@
 
   <div *ngIf="view === 'marketplace'">
 
-    <div *ngIf="state.marketplace.length === 0" class="no-results">
+    <div *ngIf="marketplaceTickets.length === 0" class="no-results">
     <p>No tickets to display.</p>
     </div>
 
     <div
       class="ticket-card marketplace card"
-      *ngFor="let ticket of state.marketplace">
+      *ngFor="let ticket of marketplaceTickets">
 
       <div class="sold-label">
         Resold Ticket

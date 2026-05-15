@@ -73,6 +73,7 @@ export interface UiBooking {
   originalPrice?: number;
   status: 'pending' | 'confirmed' | 'pending-sale' | 'sold' | 'cancelled';
   seat: string;
+  canResell?: boolean;
 }
 
 export interface MarketplaceListing {
@@ -88,6 +89,7 @@ export interface MarketplaceListing {
   originalPrice: number;
   price: number;
   status: 'available' | 'sold';
+  sellerName?: string;
 }
 
 @Injectable({
@@ -258,6 +260,9 @@ export class AppStateService {
 
     try {
       await firstValueFrom(this.api.checkoutWallet());
+      if (typeof targetBookingId === 'number') {
+        this.markBookingConfirmed(targetBookingId);
+      }
       await this.loadBookings();
       await this.loadTickets();
       if (typeof this.buyingMarketplaceTicketId === 'number') {
@@ -288,6 +293,7 @@ export class AppStateService {
       }),
     );
 
+    this.markTicketPendingSale(ticket.id);
     await this.loadMarketplace().catch(() => undefined);
     await this.loadTickets().catch(() => undefined);
     await this.loadBookings().catch(() => undefined);
@@ -351,6 +357,7 @@ export class AppStateService {
     const profile = await firstValueFrom(this.api.getMyProfile());
     this.userProfile = this.mapProfileToUi(profile);
   }
+
 
   async saveProfile(profile: {
     firstName: string;
@@ -481,6 +488,8 @@ export class AppStateService {
 
   private mapTicketToUiBooking(ticket: TicketDto): UiBooking {
     const boardingDate = new Date(ticket.boardingTime);
+    const isConfirmed = ticket.status?.toLowerCase() === 'confirmed';
+    const canResell = isConfirmed && !ticket.isMarketplacePurchase;
 
     return {
       id: ticket.bookingId,
@@ -500,9 +509,24 @@ export class AppStateService {
       passengers: ticket.seatsBooked,
       price: ticket.totalPrice,
       originalPrice: ticket.totalPrice,
-      status: 'confirmed',
+      status: isConfirmed ? 'confirmed' : 'pending',
       seat: ticket.passengers.map((passenger) => passenger.seatNumber).join(', '),
+      canResell,
     };
+  }
+
+  private markTicketPendingSale(bookingId: number): void {
+    this.myTickets = this.myTickets.map((ticket) =>
+      ticket.id === bookingId
+        ? { ...ticket, status: 'pending-sale', canResell: false }
+        : ticket,
+    );
+
+    this.bookings = this.bookings.map((booking) =>
+      booking.id === bookingId
+        ? { ...booking, status: 'pending-sale', canResell: false }
+        : booking,
+    );
   }
 
   private mapTripToLocalPendingBooking(trip: UiTrip): UiBooking {
@@ -537,6 +561,23 @@ export class AppStateService {
     };
 
     this.localConfirmedBookings = this.mergeBookings([confirmedBooking, ...this.localConfirmedBookings]);
+  }
+
+  private markBookingConfirmed(bookingId: number): void {
+    this.localPendingBookings = this.localPendingBookings.filter((booking) => booking.id !== bookingId);
+
+    const baseBooking =
+      this.bookings.find((booking) => booking.id === bookingId) ||
+      (this.currentPaymentBooking?.id === bookingId ? this.currentPaymentBooking : null);
+
+    if (baseBooking) {
+      const confirmedBooking: UiBooking = { ...baseBooking, status: 'confirmed' };
+      this.localConfirmedBookings = this.mergeBookings([confirmedBooking, ...this.localConfirmedBookings]);
+    }
+
+    this.bookings = this.bookings.map((booking) =>
+      booking.id === bookingId ? { ...booking, status: 'confirmed' } : booking,
+    );
   }
 
   private mergeBookings(bookings: UiBooking[]): UiBooking[] {
@@ -597,6 +638,7 @@ export class AppStateService {
         originalPrice: listing.originalPrice,
         price: listing.askingPrice,
         status: 'available',
+        sellerName: listing.sellerName,
       };
     });
   }

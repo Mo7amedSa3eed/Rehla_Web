@@ -16,4 +16,5 @@ export const routes: Routes = [
   { path: 'edit-profile', loadComponent: () => import('./pages/edit-profile/edit-profile').then(m => m.EditProfileComponent) },
   { path: 'marketplace', loadComponent: () => import('./pages/marketplace/marketplace').then(m => m.MarketplaceComponent) },
   { path: 'resell', loadComponent: () => import('./pages/resell/resell').then(m => m.ResellComponent) },
+  { path: 'challenges', loadComponent: () => import('./pages/challenges-dashboard/challenges-dashboard').then(m => m.ChallengesDashboardComponent) },
 ];

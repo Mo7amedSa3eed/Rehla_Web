@@ -121,6 +121,25 @@
   transform: translateY(-2px);
 }
 
+.rewards-btn {
+  margin-top: 14px;
+  padding: 12px 26px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  background: #1A3045;
+  border: 1px solid #1E3A52;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.rewards-btn:hover {
+  transform: translateY(-2px);
+  color: #FFFFFF;
+  border-color: #3180A4;
+}
+
 @media (max-width: 768px) {
   .stats {
     flex-direction: column;

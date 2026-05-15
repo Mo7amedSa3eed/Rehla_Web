@@ -1,0 +1,159 @@
+<div class="container challenges-dashboard" *ngIf="pointsService.pointsState$ | async as pointsState">
+  <div class="card notice" *ngIf="isLoading">Loading rewards data...</div>
+  <div class="card notice error" *ngIf="!isLoading && loadError">{{ loadError }}</div>
+  <section class="hero card">
+    <div>
+      <p class="eyebrow">Challenges & Rewards</p>
+      <h1>Keep your journeys rewarding</h1>
+      <p class="subtitle">Track onboarding wins, monthly streaks, and redeem points instantly.</p>
+    </div>
+    <div class="hero-balance">
+      <span>Total Points</span>
+      <strong>{{ pointsState.balance | number:'1.0-0' }}</strong>
+      <small>≈ {{ pointsState.balance * pointsService.pointValueEgp | number:'1.2-2' }} EGP</small>
+    </div>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card card">
+      <h3>Wallet Snapshot</h3>
+      <p class="muted">Expiring points</p>
+      <div class="summary-value">{{ pointsState.expiringPointsAmount | number:'1.0-0' }}</div>
+      <p class="muted">Next expiry: {{ pointsState.nextExpiryDate || 'Not scheduled' }}</p>
+    </div>
+
+    <div class="summary-card card">
+      <h3>Points Preview</h3>
+      <p class="muted">Ticket price example</p>
+      <div class="summary-value">{{ cartTotal | number:'1.0-0' }} EGP</div>
+      <p class="muted">
+        Earned: {{ pointsService.calculatePointsEarned(cartTotal) | number:'1.0-0' }} pts
+      </p>
+    </div>
+  </section>
+
+  <section class="redeem card">
+    <div class="redeem-header">
+      <div>
+        <h2>Redeem for Discount</h2>
+        <p class="muted">Use points to lower your cart total (min 10 EGP, max 50% off).</p>
+      </div>
+      <div class="redeem-value">
+        <span>Points to Spend</span>
+        <strong>{{ selectedPoints | number:'1.0-0' }}</strong>
+      </div>
+    </div>
+
+    <div class="redeem-controls">
+      <label class="field">
+        <span>Cart Total (EGP)</span>
+        <input
+          type="number"
+          min="0"
+          step="1"
+          [(ngModel)]="cartTotal"
+          (ngModelChange)="onCartTotalChange(pointsState.balance)" />
+      </label>
+
+      <div class="slider-block">
+        <div class="slider-labels">
+          <span>0 pts</span>
+          <span>{{ getMaxRedeemablePoints(pointsState.balance) | number:'1.0-0' }} pts</span>
+        </div>
+        <input
+          class="points-slider"
+          type="range"
+          [min]="0"
+          [max]="getMaxRedeemablePoints(pointsState.balance)"
+          [step]="pointsService.sliderStep"
+          [value]="selectedPoints"
+          (input)="onSliderChange($any($event.target).value, pointsState.balance)"
+          [disabled]="getMaxRedeemablePoints(pointsState.balance) === 0" />
+        <p class="muted" *ngIf="getMaxRedeemablePoints(pointsState.balance) === 0">
+          Add points or increase cart total to unlock redemptions.
+        </p>
+      </div>
+    </div>
+
+    <div class="redeem-preview" *ngIf="getRedemptionPreview(pointsState.balance) as preview">
+      <div>
+        <p class="muted">Discount</p>
+        <strong>{{ preview.discountEgp | number:'1.2-2' }} EGP</strong>
+      </div>
+      <div>
+        <p class="muted">Final Total</p>
+        <strong>{{ preview.finalTotal | number:'1.2-2' }} EGP</strong>
+      </div>
+      <div>
+        <p class="muted">Points After</p>
+        <strong>{{ preview.pointsAfter | number:'1.0-0' }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="challenge-section" *ngIf="pointsService.onboarding$ | async as onboarding">
+    <div class="section-header">
+      <div>
+        <h2>Onboarding Challenges</h2>
+        <p class="muted">Complete these once to boost your starter balance.</p>
+      </div>
+      <span class="pill">One-time</span>
+    </div>
+
+    <div class="challenge-grid">
+      <article class="challenge-card card" *ngFor="let task of onboarding">
+        <div class="challenge-header">
+          <div>
+            <h3>{{ task.title }}</h3>
+            <p class="muted">{{ task.description }}</p>
+          </div>
+          <span class="status" [class.claimed]="task.rewardClaimed">
+            {{ onboardingStatus(task) }}
+          </span>
+        </div>
+
+        <div class="progress">
+          <div class="progress-bar" [style.width.%]="onboardingProgress(task)"></div>
+        </div>
+
+        <div class="challenge-footer">
+          <span class="reward">+{{ task.rewardPoints }} pts</span>
+          <span class="status" [class.claimed]="task.rewardClaimed">Tracked automatically</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="challenge-section" *ngIf="pointsService.monthly$ | async as monthly">
+    <div class="section-header">
+      <div>
+        <h2>Monthly Challenges</h2>
+        <p class="muted">Progress resets on the 1st of every month.</p>
+      </div>
+      <span class="pill">Recurring</span>
+    </div>
+
+    <div class="challenge-grid">
+      <article class="challenge-card card" *ngFor="let task of monthly">
+        <div class="challenge-header">
+          <div>
+            <h3>{{ task.title }}</h3>
+            <p class="muted">{{ task.description }}</p>
+          </div>
+          <span class="status" [class.locked]="task.progress === 0" [class.claimed]="task.rewardClaimed">
+            {{ monthlyStatus(task) }}
+          </span>
+        </div>
+
+        <div class="progress">
+          <div class="progress-bar" [style.width.%]="monthlyProgress(task)"></div>
+        </div>
+
+        <div class="challenge-footer">
+          <span class="reward">{{ task.progress }}/{{ task.target }} • +{{ task.rewardPoints }} pts</span>
+          <span class="status" [class.claimed]="task.rewardClaimed">Tracked automatically</span>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
