@@ -313,6 +313,11 @@ export interface WalletDepositRequest {
   cvv: string;
 }
 
+export interface CheckoutRequest {
+  paymentMethod: 'Wallet' | 'Points';
+  pointsToRedeem?: number;
+}
+
 export interface WalletHistoryItemDto {
   id: number;
   amount: number;
@@ -627,6 +632,19 @@ export class ApiService {
       .post<ApiResponse<string>>(
         `${this.baseUrl}/Bookings/checkout`,
         { paymentMethod: 'Wallet' },
+        { headers: this.authHeaders() },
+      )
+      .pipe(map((response) => this.unwrap(response)));
+  }
+
+  checkoutPoints(pointsToRedeem: number): Observable<string> {
+    return this.http
+      .post<ApiResponse<string>>(
+        `${this.baseUrl}/Bookings/checkout`,
+        {
+          paymentMethod: 'Points',
+          pointsToRedeem,
+        },
         { headers: this.authHeaders() },
       )
       .pipe(map((response) => this.unwrap(response)));

@@ -33,6 +33,7 @@ export interface UserProfile {
   totalTrips: number;
   totalDistanceTraveled: number;
   walletBalance: number;
+  loyaltyPointsBalance: number;
 }
 
 export interface UiTrip {
@@ -122,7 +123,8 @@ export class AppStateService {
     photo: null as string | null,
     totalTrips: 12,
     totalDistanceTraveled: 0,
-    walletBalance: 0
+    walletBalance: 0,
+    loyaltyPointsBalance: 0,
   };
 
   updateUserProfile(updated: UserProfile) {
@@ -283,6 +285,48 @@ export class AppStateService {
 
     this.currentPaymentBooking = null;
     this.buyingMarketplaceTicketId = null;
+  }
+
+  async checkoutPoints(pointsToRedeem: number): Promise<void> {
+    if (!this.isBrowser()) {
+      return;
+    }
+
+    const targetBookingId = this.currentPaymentBooking?.id;
+
+    try {
+      await firstValueFrom(this.api.checkoutPoints(pointsToRedeem));
+      if (typeof targetBookingId === 'number') {
+        this.markBookingConfirmed(targetBookingId);
+      }
+      await this.loadBookings();
+      await this.loadTickets();
+      await this.loadProfile().catch(() => undefined);
+    } catch {
+      if (typeof targetBookingId === 'number') {
+        this.confirmLocalBooking(targetBookingId);
+      }
+      await this.loadBookings();
+      await this.loadTickets();
+    }
+
+    this.currentPaymentBooking = null;
+    this.buyingMarketplaceTicketId = null;
+  }
+
+  async depositToWallet(payload: {
+    amount: number;
+    mockCardNumber: string;
+    expiryDate: string;
+    cvv: string;
+  }): Promise<string> {
+    if (!this.isBrowser()) {
+      return 'Wallet charging is available in browser mode only.';
+    }
+
+    const message = await firstValueFrom(this.api.depositToWallet(payload));
+    await this.loadProfile().catch(() => undefined);
+    return message;
   }
 
   async listTicketForResale(ticket: UiBooking, askingPrice: number): Promise<void> {
@@ -662,6 +706,7 @@ export class AppStateService {
       totalTrips: profile.totalTripsCount,
       totalDistanceTraveled: profile.totalDistanceTraveled ?? 0,
       walletBalance: profile.walletBalance,
+      loyaltyPointsBalance: profile.loyaltyPointsBalance,
     };
   }
 

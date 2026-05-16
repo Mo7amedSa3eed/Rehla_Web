@@ -42,19 +42,4 @@ export class MyBookingsComponent implements OnInit {
 
   }
 
-  async cancelHold(booking: any): Promise<void> {
-    const bookingId = Number(booking?.id);
-    if (!Number.isFinite(bookingId)) {
-      return;
-    }
-
-    try {
-      await this.state.cancelCartHold(bookingId);
-      await this.refreshBookings();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to cancel hold';
-      alert(message);
-    }
-  }
-
 }

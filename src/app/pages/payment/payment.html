@@ -36,7 +36,7 @@
 
       <div class="total">
         <span>Total Amount:</span>
-        <span class="price">${{state.currentPaymentBooking?.price| number:'1.2-2'}}</span>
+        <span class="price">{{state.currentPaymentBooking?.price| number:'1.2-2'}} EGP</span>
       </div>
 
     </div>
@@ -45,41 +45,41 @@
     <div class="payment-method">
 
       <h3>Payment Method</h3>
+      <p class="method-note">Visa is only used from Profile to charge your wallet. Booking payments use wallet or loyalty points.</p>
 
-      <div class="form-row">
+      <div class="payment-options">
+        <label class="method-option">
+          <input type="radio" name="paymentMethod" value="wallet" [(ngModel)]="paymentMethod" />
+          <div>
+            <strong>Pay with Wallet</strong>
+            <p>Balance: {{ state.userProfile.walletBalance | number:'1.2-2' }} EGP</p>
+          </div>
+        </label>
 
-        <div class="form-group">
-          <label>Card Number</label>
-          <input placeholder="1234 5678 9012 3456">
-        </div>
-
-        <div class="form-group">
-          <label>Card Holder Name</label>
-          <input placeholder="John Doe">
-        </div>
-
+        <label class="method-option">
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="points"
+            [(ngModel)]="paymentMethod"
+            [disabled]="!canPayWithPoints" />
+          <div>
+            <strong>Pay with Points</strong>
+            <p>Required: {{ pointsNeeded | number:'1.0-0' }} pts</p>
+            <p>Available: {{ state.userProfile.loyaltyPointsBalance | number:'1.0-0' }} pts</p>
+          </div>
+        </label>
       </div>
 
-
-      <div class="form-row">
-
-        <div class="form-group">
-          <label>Expiry Date</label>
-          <input placeholder="MM/YY">
-        </div>
-
-        <div class="form-group">
-          <label>CVV</label>
-          <input placeholder="123">
-        </div>
-
-      </div>
+      <p class="points-warning" *ngIf="!canPayWithPoints">
+        You need more points to pay with points for this booking.
+      </p>
 
 
       <div class="buttons">
 
-        <button class="pay-btn btn btn-primary" (click)="confirmPayment()">
-          Complete Payment
+        <button class="pay-btn btn btn-primary" [disabled]="isSubmitting || (paymentMethod === 'points' && !canPayWithPoints)" (click)="confirmPayment()">
+          {{ isSubmitting ? 'Processing...' : 'Complete Payment' }}
         </button>
 
         <button class="cancel-btn btn btn-outline" routerLink="/my-bookings">

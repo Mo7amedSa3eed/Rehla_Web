@@ -29,8 +29,8 @@
         </div>
 
         <div class="stat-box">
-          <h3>{{ user.totalDistanceTraveled | number }} km</h3>
-          <span>Total Distance</span>
+          <h3>{{ user.loyaltyPointsBalance | number:'1.0-0' }} pts</h3>
+          <span>Total Points</span>
         </div>
 
         <div class="stat-box">
@@ -39,6 +39,66 @@
         </div>
 
       </div>
+
+      <section class="wallet-topup">
+        <h3>Charge Wallet with Visa</h3>
+        <p class="wallet-note">Use Visa here to add money to your wallet. Ticket booking accepts wallet or points only.</p>
+
+        <div class="wallet-form-grid">
+          <label class="wallet-field full-width">
+            <span>Amount (EGP)</span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              [(ngModel)]="depositAmount"
+              placeholder="Enter amount" />
+          </label>
+
+          <label class="wallet-field full-width">
+            <span>Visa Card Number</span>
+            <input
+              type="text"
+              [(ngModel)]="cardNumber"
+              placeholder="4111 1111 1111 1111" />
+          </label>
+
+          <label class="wallet-field">
+            <span>Expiry Date</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="5"
+              pattern="(0[1-9]|1[0-2])/[0-9]{2}"
+              [(ngModel)]="expiryDate"
+              (ngModelChange)="onExpiryDateChange($event)"
+              placeholder="MM/YY" />
+          </label>
+
+          <label class="wallet-field">
+            <span>CVV</span>
+            <input
+              type="password"
+              inputmode="numeric"
+              maxlength="3"
+              pattern="[0-9]{3}"
+              [(ngModel)]="cvv"
+              (ngModelChange)="onCvvChange($event)"
+              placeholder="123" />
+          </label>
+        </div>
+
+        <button
+          class="btn btn-primary charge-btn"
+          type="button"
+          [disabled]="isChargingWallet"
+          (click)="chargeWallet()">
+          {{ isChargingWallet ? 'Charging...' : 'Charge Wallet' }}
+        </button>
+
+        <p class="wallet-success" *ngIf="walletMessage">{{ walletMessage }}</p>
+        <p class="wallet-error" *ngIf="walletError">{{ walletError }}</p>
+      </section>
 
       <button class="edit-btn btn btn-primary" routerLink="/edit-profile">
         Edit Profile

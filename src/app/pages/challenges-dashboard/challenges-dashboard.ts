@@ -1,18 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { PointsService, OnboardingChallenge, MonthlyChallenge, RedemptionPreview } from './points.service';
+import { PointsService, OnboardingChallenge, MonthlyChallenge } from './points.service';
 
 @Component({
   selector: 'app-challenges-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './challenges-dashboard.html',
   styleUrls: ['./challenges-dashboard.scss']
 })
 export class ChallengesDashboardComponent implements OnInit {
   cartTotal = 240;
-  selectedPoints = 0;
   isLoading = true;
   loadError = '';
 
@@ -26,27 +24,6 @@ export class ChallengesDashboardComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
-  }
-
-  getMaxRedeemablePoints(walletPoints: number): number {
-    return this.pointsService.calculateMaxRedeemablePoints(this.cartTotal, walletPoints);
-  }
-
-  getRedemptionPreview(walletPoints: number): RedemptionPreview {
-    return this.pointsService.calculateRedemptionPreview(this.cartTotal, walletPoints, this.selectedPoints);
-  }
-
-  onCartTotalChange(walletPoints: number): void {
-    const maxPoints = this.getMaxRedeemablePoints(walletPoints);
-    if (this.selectedPoints > maxPoints) {
-      this.selectedPoints = maxPoints;
-    }
-  }
-
-  onSliderChange(value: string, walletPoints: number): void {
-    const numeric = Number(value) || 0;
-    const snapped = Math.round(numeric / this.pointsService.sliderStep) * this.pointsService.sliderStep;
-    this.selectedPoints = Math.min(snapped, this.getMaxRedeemablePoints(walletPoints));
   }
 
   onboardingStatus(task: OnboardingChallenge): string {
