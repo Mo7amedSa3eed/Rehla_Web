@@ -16,6 +16,7 @@ export class ProfileComponent implements OnInit {
   cardNumber = '';
   expiryDate = '';
   cvv = '';
+  showWalletTopupModal = false;
   isChargingWallet = false;
   walletMessage = '';
   walletError = '';
@@ -44,6 +45,24 @@ export class ProfileComponent implements OnInit {
       .filter((value) => value && value.trim().length > 0)
       .join(' ')
       .trim();
+  }
+
+  openWalletTopup(): void {
+    this.showWalletTopupModal = true;
+  }
+
+  closeWalletTopup(): void {
+    if (this.isChargingWallet) {
+      return;
+    }
+
+    this.showWalletTopupModal = false;
+  }
+
+  onWalletOverlayClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeWalletTopup();
+    }
   }
 
   onCvvChange(value: string): void {

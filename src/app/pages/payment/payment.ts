@@ -58,4 +58,10 @@ export class PaymentComponent implements OnInit {
       this.isSubmitting = false;
     }
   }
+
+  async cancel(): Promise<void> {
+    this.state.currentPaymentBooking = null;
+    this.state.buyingMarketplaceTicketId = null;
+    await this.router.navigate(['/my-bookings']);
+  }
 }

@@ -16,20 +16,11 @@
 
   <section class="summary-grid">
     <div class="summary-card card">
-      <h3>Wallet Snapshot</h3>
-      <p class="muted">Expiring points</p>
+      <h3>Points expiring soon</h3>
       <div class="summary-value">{{ pointsState.expiringPointsAmount | number:'1.0-0' }}</div>
       <p class="muted">Next expiry: {{ pointsState.nextExpiryDate || 'Not scheduled' }}</p>
     </div>
 
-    <div class="summary-card card">
-      <h3>Points Preview</h3>
-      <p class="muted">Ticket price example</p>
-      <div class="summary-value">{{ cartTotal | number:'1.0-0' }} EGP</div>
-      <p class="muted">
-        Earned: {{ pointsService.calculatePointsEarned(cartTotal) | number:'1.0-0' }} pts
-      </p>
-    </div>
   </section>
 
   <section class="challenge-section" *ngIf="pointsService.onboarding$ | async as onboarding">

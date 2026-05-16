@@ -82,7 +82,7 @@
           {{ isSubmitting ? 'Processing...' : 'Complete Payment' }}
         </button>
 
-        <button class="cancel-btn btn btn-outline" routerLink="/my-bookings">
+        <button class="cancel-btn btn btn-outline" type="button" (click)="cancel()">
           Cancel
         </button>
 

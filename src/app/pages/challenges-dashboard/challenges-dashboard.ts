@@ -10,7 +10,6 @@ import { PointsService, OnboardingChallenge, MonthlyChallenge } from './points.s
   styleUrls: ['./challenges-dashboard.scss']
 })
 export class ChallengesDashboardComponent implements OnInit {
-  cartTotal = 240;
   isLoading = true;
   loadError = '';
 

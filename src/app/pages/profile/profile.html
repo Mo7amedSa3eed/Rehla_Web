@@ -40,64 +40,18 @@
 
       </div>
 
-      <section class="wallet-topup">
-        <h3>Charge Wallet with Visa</h3>
-        <p class="wallet-note">Use Visa here to add money to your wallet. Ticket booking accepts wallet or points only.</p>
-
-        <div class="wallet-form-grid">
-          <label class="wallet-field full-width">
-            <span>Amount (EGP)</span>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              [(ngModel)]="depositAmount"
-              placeholder="Enter amount" />
-          </label>
-
-          <label class="wallet-field full-width">
-            <span>Visa Card Number</span>
-            <input
-              type="text"
-              [(ngModel)]="cardNumber"
-              placeholder="4111 1111 1111 1111" />
-          </label>
-
-          <label class="wallet-field">
-            <span>Expiry Date</span>
-            <input
-              type="text"
-              inputmode="numeric"
-              maxlength="5"
-              pattern="(0[1-9]|1[0-2])/[0-9]{2}"
-              [(ngModel)]="expiryDate"
-              (ngModelChange)="onExpiryDateChange($event)"
-              placeholder="MM/YY" />
-          </label>
-
-          <label class="wallet-field">
-            <span>CVV</span>
-            <input
-              type="password"
-              inputmode="numeric"
-              maxlength="3"
-              pattern="[0-9]{3}"
-              [(ngModel)]="cvv"
-              (ngModelChange)="onCvvChange($event)"
-              placeholder="123" />
-          </label>
+      <section
+        class="wallet-topup-trigger"
+        role="button"
+        tabindex="0"
+        (click)="openWalletTopup()"
+        (keydown.enter)="openWalletTopup()"
+        (keydown.space)="$event.preventDefault(); openWalletTopup()">
+        <div>
+          <h3>Charge Wallet with Visa</h3>
+          <p class="wallet-note">Tap to open wallet charging screen.</p>
         </div>
-
-        <button
-          class="btn btn-primary charge-btn"
-          type="button"
-          [disabled]="isChargingWallet"
-          (click)="chargeWallet()">
-          {{ isChargingWallet ? 'Charging...' : 'Charge Wallet' }}
-        </button>
-
-        <p class="wallet-success" *ngIf="walletMessage">{{ walletMessage }}</p>
-        <p class="wallet-error" *ngIf="walletError">{{ walletError }}</p>
+        <span class="wallet-trigger-arrow">›</span>
       </section>
 
       <button class="edit-btn btn btn-primary" routerLink="/edit-profile">
@@ -105,7 +59,7 @@
       </button>
 
       <button class="rewards-btn btn btn-outline" routerLink="/challenges">
-        View Challenges & Rewards
+        Loyalty Hub
       </button>
 
       <button class="logout-btn btn btn-ghost" (click)="logout()">
@@ -115,6 +69,74 @@
     </div>
 
   </div>
+</div>
+
+<div
+  class="wallet-modal-overlay"
+  *ngIf="showWalletTopupModal"
+  (click)="onWalletOverlayClick($event)">
+  <section class="wallet-topup wallet-modal card">
+    <div class="wallet-modal-header">
+      <h3>Charge Wallet with Visa</h3>
+      <button class="wallet-close" type="button" (click)="closeWalletTopup()" [disabled]="isChargingWallet">×</button>
+    </div>
+    <p class="wallet-note">Use Visa here to add money to your wallet. Ticket booking accepts wallet or points only.</p>
+
+    <div class="wallet-form-grid">
+      <label class="wallet-field full-width">
+        <span>Amount (EGP)</span>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          [(ngModel)]="depositAmount"
+          placeholder="Enter amount" />
+      </label>
+
+      <label class="wallet-field full-width">
+        <span>Visa Card Number</span>
+        <input
+          type="text"
+          [(ngModel)]="cardNumber"
+          placeholder="4111 1111 1111 1111" />
+      </label>
+
+      <label class="wallet-field">
+        <span>Expiry Date</span>
+        <input
+          type="text"
+          inputmode="numeric"
+          maxlength="5"
+          pattern="(0[1-9]|1[0-2])/[0-9]{2}"
+          [(ngModel)]="expiryDate"
+          (ngModelChange)="onExpiryDateChange($event)"
+          placeholder="MM/YY" />
+      </label>
+
+      <label class="wallet-field">
+        <span>CVV</span>
+        <input
+          type="password"
+          inputmode="numeric"
+          maxlength="3"
+          pattern="[0-9]{3}"
+          [(ngModel)]="cvv"
+          (ngModelChange)="onCvvChange($event)"
+          placeholder="123" />
+      </label>
+    </div>
+
+    <button
+      class="btn btn-primary charge-btn"
+      type="button"
+      [disabled]="isChargingWallet"
+      (click)="chargeWallet()">
+      {{ isChargingWallet ? 'Charging...' : 'Charge Wallet' }}
+    </button>
+
+    <p class="wallet-success" *ngIf="walletMessage">{{ walletMessage }}</p>
+    <p class="wallet-error" *ngIf="walletError">{{ walletError }}</p>
+  </section>
 </div>
 
 

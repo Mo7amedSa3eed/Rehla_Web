@@ -1,0 +1,72 @@
+<div class="passenger-page">
+  <div class="header">
+    <button class="back-btn" type="button" (click)="goBack()" [disabled]="isProcessing">
+      ←
+    </button>
+    <h1>Passenger Details</h1>
+  </div>
+
+  <div *ngIf="selectedTrip" class="passenger-form-section">
+    <div class="passenger-header">
+      <h2 class="passenger-title">Passenger 1</h2>
+    </div>
+
+    <div class="form-fields">
+      <div class="form-field">
+        <span class="field-icon">👤</span>
+        <input
+          type="text"
+          placeholder="Full Name"
+          [(ngModel)]="fullName"
+          required />
+      </div>
+
+      <div class="form-field" [ngClass]="{ 'invalid-field': isNationalIdInvalid() }">
+        <span class="field-icon">📋</span>
+        <input
+          type="text"
+          placeholder="National ID"
+          [(ngModel)]="nationalId"
+          inputmode="numeric"
+          maxlength="14"
+          required />
+      </div>
+
+      <div class="form-field" [ngClass]="{ 'invalid-field': isPhoneNumberInvalid() }">
+        <span class="field-icon">📞</span>
+        <input
+          type="tel"
+          placeholder="Phone Number"
+          [(ngModel)]="phoneNumber"
+          inputmode="numeric"
+          maxlength="11"
+          required />
+      </div>
+
+      <div class="form-field">
+        <span class="field-icon">✉️</span>
+        <input
+          type="email"
+          placeholder="Email Address (Optional)"
+          [(ngModel)]="email" />
+      </div>
+    </div>
+  </div>
+
+  <div class="action-buttons">
+    <button
+      class="btn add-to-cart-btn"
+      type="button"
+      [disabled]="!isFormValid() || isProcessing"
+      (click)="addToCart()">
+      {{ isProcessing ? 'Processing...' : 'Add to Cart' }}
+    </button>
+    <button
+      class="btn book-now-btn"
+      type="button"
+      [disabled]="!isFormValid() || isProcessing"
+      (click)="bookNow()">
+      {{ isProcessing ? 'Processing...' : 'Book Now' }}
+    </button>
+  </div>
+</div>

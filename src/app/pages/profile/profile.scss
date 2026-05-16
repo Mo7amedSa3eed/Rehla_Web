@@ -114,6 +114,77 @@
   text-align: left;
 }
 
+.wallet-topup-trigger {
+  margin-bottom: 28px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid #1E3A52;
+  background: #142F4F;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.wallet-topup-trigger:hover {
+  border-color: #2f6498;
+  transform: translateY(-1px);
+}
+
+.wallet-topup-trigger:focus-visible {
+  outline: 2px solid #00B1DF;
+  outline-offset: 2px;
+}
+
+.wallet-trigger-arrow {
+  font-size: 30px;
+  color: #8fdfff;
+  line-height: 1;
+}
+
+.wallet-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 15, 28, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1100;
+}
+
+.wallet-modal {
+  width: min(700px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  margin: 0;
+}
+
+.wallet-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wallet-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #1E3A52;
+  background: #0F1B2D;
+  color: #FFFFFF;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wallet-close:hover:enabled {
+  border-color: #2f6498;
+}
+
 .wallet-topup h3 {
   margin: 0 0 8px;
   color: #FFFFFF;
@@ -195,6 +266,7 @@
 
 .rewards-btn {
   margin-top: 14px;
+  margin-left: 10px;
   padding: 12px 26px;
   border-radius: 12px;
   font-size: 15px;
@@ -255,5 +327,13 @@
 
   .wallet-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .wallet-modal {
+    width: 100%;
+  }
+
+  .rewards-btn {
+    margin-left: 0;
   }
 }

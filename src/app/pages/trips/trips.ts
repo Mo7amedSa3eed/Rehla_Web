@@ -15,17 +15,8 @@ export class TripsComponent {
 
   constructor(public state: AppStateService, private router: Router) {}
 
-  async bookTrip(trip: any): Promise<void> {
-    this.isSubmitting = true;
-
-    try {
-      await this.state.addTripToCart(trip);
-      await this.router.navigate(['/my-bookings']);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to add trip to cart';
-      alert(message);
-    } finally {
-      this.isSubmitting = false;
-    }
+  async selectTrip(trip: any): Promise<void> {
+    this.state.selectedTicket = trip;
+    await this.router.navigate(['/passenger-details']);
   }
 }

@@ -10,6 +10,7 @@ export const routes: Routes = [
   { path: 'about', loadComponent: () => import('./pages/about/about').then(m => m.AboutComponent) },
   { path: 'booking', loadComponent: () => import('./pages/booking/booking').then(m => m.BookingComponent) },
   { path: 'trips', loadComponent: () => import('./pages/trips/trips').then(m => m.TripsComponent) },
+  { path: 'passenger-details', loadComponent: () => import('./pages/passenger-details/passenger-details').then(m => m.PassengerDetailsComponent) },
   { path: 'my-bookings', loadComponent: () => import('./pages/my-bookings/my-bookings').then(m => m.MyBookingsComponent) },
   { path: 'payment', loadComponent: () => import('./pages/payment/payment').then(m => m.PaymentComponent) },
   { path: 'my-tickets', loadComponent: () => import('./pages/my-tickets/my-tickets').then(m => m.MyTicketsComponent) },
