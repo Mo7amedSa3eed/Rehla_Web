@@ -287,6 +287,7 @@ export interface UpdateProfileRequest {
   lastName: string;
   email?: string;
   phoneNumber?: string;
+  profilePictureUrl?: string | null;
 }
 
 export interface SearchTripsParams {
@@ -393,6 +394,7 @@ export interface LoyaltyChallengesPagedDto {
 export class ApiService {
   // Use the shared production/development backend base URL.
   private readonly baseUrl = 'https://rehlabussines2-001-site1.anytempurl.com/api';
+  private readonly publicBaseUrl = 'https://rehlabussines2-001-site1.anytempurl.com';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -696,7 +698,19 @@ export class ApiService {
       .post<ApiResponse<{ profilePictureUrl: string }>>(`${this.baseUrl}/Users/me/profile-picture`, formData, {
         headers: this.authHeaders(),
       })
-      .pipe(map((response) => this.unwrap(response).profilePictureUrl ?? null));
+      .pipe(map((response) => this.resolveProfilePictureUrl(this.unwrap(response).profilePictureUrl ?? null)));
+  }
+
+  resolveProfilePictureUrl(path: string | null | undefined): string | null {
+    if (!path) {
+      return null;
+    }
+
+    if (/^https?:\/\//i.test(path)) {
+      return path;
+    }
+
+    return `${this.publicBaseUrl}/${path.replace(/^\/+/, '')}`;
   }
 
   depositToWallet(payload: WalletDepositRequest): Observable<string> {

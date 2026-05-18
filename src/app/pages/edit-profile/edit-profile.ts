@@ -67,11 +67,17 @@ export class EditProfileComponent implements OnInit {
     }
 
     try {
-      await this.state.saveProfile(this.user);
+      let uploadedPhotoUrl = this.user.photo ?? null;
 
       if (this.selectedPhoto) {
-        await this.state.uploadProfilePicture(this.selectedPhoto);
+        uploadedPhotoUrl = await this.state.uploadProfilePicture(this.selectedPhoto);
+        this.user.photo = uploadedPhotoUrl;
       }
+
+      await this.state.saveProfile({
+        ...this.user,
+        profilePictureUrl: uploadedPhotoUrl,
+      });
 
       await this.router.navigate(['/profile']);
     } catch (error) {

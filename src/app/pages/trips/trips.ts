@@ -17,6 +17,12 @@ export class TripsComponent {
 
   async selectTrip(trip: any): Promise<void> {
     this.state.selectedTicket = trip;
+    // If the last search was for bus trips, show seat selection first
+    if (this.state.lastSearchTransport === 1) {
+      await this.router.navigate(['/seat-selection']);
+      return;
+    }
+
     await this.router.navigate(['/passenger-details']);
   }
 }

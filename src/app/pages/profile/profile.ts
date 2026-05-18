@@ -20,16 +20,54 @@ export class ProfileComponent implements OnInit {
   isChargingWallet = false;
   walletMessage = '';
   walletError = '';
+  showLogoutConfirmModal = false;
 
   constructor(public state: AppStateService, private readonly router: Router) {}
 
   logout(): void {
+    this.showLogoutConfirmModal = true;
+  }
+
+  confirmLogout(): void {
+    this.showLogoutConfirmModal = false;
+
     if (typeof window !== 'undefined') {
+      // Clear auth tokens
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      
+      // Clear browser history to prevent going back
+      window.history.replaceState({}, '', '/login');
     }
 
+    // Reset the user profile state
+    this.state.userProfile = {
+      userId: 0,
+      firstName: '',
+      familyName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      dob: '',
+      gender: '',
+      address: '',
+      city: '',
+      state: '',
+      country: '',
+      countryCode: '',
+      memberSince: '',
+      photo: null,
+      totalTrips: 0,
+      totalDistanceTraveled: 0,
+      walletBalance: 0,
+      loyaltyPointsBalance: 0,
+    };
+
     void this.router.navigate(['/login']);
+  }
+
+  cancelLogout(): void {
+    this.showLogoutConfirmModal = false;
   }
 
   async ngOnInit(): Promise<void> {

@@ -139,4 +139,31 @@
   </section>
 </div>
 
+<div
+  class="logout-modal-overlay"
+  *ngIf="showLogoutConfirmModal"
+  (click)="cancelLogout()">
+  <section class="logout-confirm-modal card">
+    <div class="logout-modal-header">
+      <h3>Confirm Logout</h3>
+    </div>
+    
+    <p class="logout-modal-message">Are you sure you want to logout?</p>
+    
+    <div class="logout-modal-buttons">
+      <button 
+        class="btn btn-primary logout-yes-btn" 
+        type="button"
+        (click)="confirmLogout()">
+        Yes
+      </button>
+      <button 
+        class="btn btn-outline logout-no-btn" 
+        type="button"
+        (click)="cancelLogout()">
+        No
+      </button>
+    </div>
+  </section>
+</div>
 

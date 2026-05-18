@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, LoginRequest } from '../../services/api';
+import { AppStateService } from '../../services/state';
 
 @Component({
   selector: 'app-login',
@@ -25,6 +26,7 @@ export class LoginComponent {
 
   constructor(
     private readonly api: ApiService,
+    private readonly state: AppStateService,
     private readonly router: Router,
   ) {}
 
@@ -47,6 +49,7 @@ export class LoginComponent {
 
       const tokens = await firstValueFrom(this.api.login(payload));
       this.storeTokens(tokens.accessToken, tokens.refreshToken);
+      this.state.applyAuthUserProfile(tokens.user);
       await this.router.navigate(['/home']);
     } catch (error) {
       this.errorMessage = this.getErrorMessage(error);

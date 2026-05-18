@@ -1,0 +1,89 @@
+<div class="container seat-selection-page">
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">←</button>
+    <h2 class="title">{{ tripInfo?.from }} → {{ tripInfo?.to }}</h2>
+  </div>
+
+  <div class="trip-header">
+    <div class="agencies">{{ tripInfo?.agencyName }} • {{ tripInfo?.agencyName }}</div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading seats...</div>
+  <div *ngIf="!loading && !seatMap" class="no-seats">No seat map available for this trip.</div>
+
+  <div *ngIf="!loading && selectedClass" class="bus-layout">
+    <div class="bus-header">
+      <span class="bus-icon">🚌</span>
+      <span class="front-icon">⬆</span>
+    </div>
+
+    <div class="seats-grid">
+      <div *ngFor="let row of seatRows" class="seat-row">
+        <div class="seat-column left-column">
+          <button
+            *ngFor="let seat of row.left"
+            type="button"
+            class="seat"
+            [class.available]="seat.status === 'Available'"
+            [class.selected]="isSeatSelected(seat.seatNumber)"
+            [class.taken]="seat.status !== 'Available'"
+            (click)="toggleSeat(seat.seatNumber, seat.status)"
+            [disabled]="seat.status !== 'Available'">
+            {{ seat.seatNumber }}
+          </button>
+        </div>
+
+        <div class="aisle" aria-hidden="true"></div>
+
+        <div class="seat-column right-column">
+          <button
+            *ngFor="let seat of row.right"
+            type="button"
+            class="seat"
+            [class.available]="seat.status === 'Available'"
+            [class.selected]="isSeatSelected(seat.seatNumber)"
+            [class.taken]="seat.status !== 'Available'"
+            (click)="toggleSeat(seat.seatNumber, seat.status)"
+            [disabled]="seat.status !== 'Available'">
+            {{ seat.seatNumber }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-icon available-icon"></span>
+        <span>Available</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-icon selected-icon"></span>
+        <span>Selected</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-icon taken-icon"></span>
+        <span>Taken</span>
+      </div>
+    </div>
+
+    <div class="selection-footer">
+      <div class="footer-left">
+        <div class="selected-count">Selected: <strong>{{ selectedSeatsLocal.length }} seats</strong></div>
+        <div *ngIf="selectedSeatsLocal.length === 0" class="no-selected">No seats selected</div>
+        <div *ngIf="selectedSeatsLocal.length > 0" class="seats-list">{{ selectedSeatsLocal.join(', ') }}</div>
+      </div>
+      <div class="footer-right">
+        <div class="total-label">Total</div>
+        <div class="total-price">EGP {{ totalPrice }}</div>
+      </div>
+    </div>
+
+    <button
+      class="btn btn-primary continue-btn"
+      [disabled]="selectedSeatsLocal.length === 0"
+      (click)="continue()">
+      Continue
+    </button>
+  </div>
+</div>
+

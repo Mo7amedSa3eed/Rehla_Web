@@ -5,6 +5,7 @@ import {
   ActiveCartDto,
   ApiService,
   CartItemDto,
+  AuthUserDto,
   MarketplaceActiveListingsDto,
   MarketplaceListingDto,
   RouteStopDto,
@@ -127,8 +128,25 @@ export class AppStateService {
     loyaltyPointsBalance: 0,
   };
 
+  // Transport of the last search (1=bus,2=train)
+  lastSearchTransport: number | null = null;
+
+  // Seats selected by the user during seat selection
+  selectedSeats: string[] = [];
+
   updateUserProfile(updated: UserProfile) {
     this.userProfile = { ...updated };
+  }
+
+  applyAuthUserProfile(user: AuthUserDto): void {
+    this.userProfile = {
+      ...this.userProfile,
+      userId: user.userId,
+      email: user.email,
+      countryCode: user.countryCode,
+      country: user.countryName,
+      photo: this.api.resolveProfilePictureUrl(user.profilePictureUrl),
+    };
   }
 
   bookings: UiBooking[] = [];
@@ -158,6 +176,8 @@ export class AppStateService {
     if (!this.isBrowser()) {
       return;
     }
+
+    this.lastSearchTransport = typeof criteria.transport === 'number' ? criteria.transport : null;
 
     const primaryResult = await firstValueFrom(
       this.api.searchTrips({
@@ -205,13 +225,21 @@ export class AppStateService {
         throw new Error('Not enough available seats for selected trip.');
       }
 
-      const availableSeats = preferredClass.seats
-        .filter((seat) => seat.status === 'Available')
-        .slice(0, this.searchPassengers)
-        .map((seat) => seat.seatNumber);
+      // If user selected seats earlier via seat-selection, prefer those
+      let seatsToUse: string[] = [];
+      if (this.selectedSeats && this.selectedSeats.length >= this.searchPassengers) {
+        seatsToUse = this.selectedSeats.slice(0, this.searchPassengers);
+      } else {
+        const availableSeats = preferredClass.seats
+          .filter((seat) => seat.status === 'Available')
+          .slice(0, this.searchPassengers)
+          .map((seat) => seat.seatNumber);
 
-      if (availableSeats.length < this.searchPassengers) {
-        throw new Error('Could not reserve enough seats. Please try another trip.');
+        if (availableSeats.length < this.searchPassengers) {
+          throw new Error('Could not reserve enough seats. Please try another trip.');
+        }
+
+        seatsToUse = availableSeats;
       }
 
       await firstValueFrom(
@@ -223,7 +251,7 @@ export class AppStateService {
           contactName: `${this.userProfile.firstName} ${this.userProfile.lastName}`.trim() || 'Rihla Guest',
           contactPhone: this.userProfile.phone || '+201000000000',
           contactEmail: this.userProfile.email || 'guest@example.com',
-          passengers: availableSeats.map((seat, index) => ({
+          passengers: seatsToUse.map((seat: string, index: number) => ({
             passengerName: `Passenger ${index + 1}`,
             idType: 'NationalId',
             idNumber: `TEMP-${Date.now()}-${index}`,
@@ -237,6 +265,9 @@ export class AppStateService {
         this.localPendingBookings = [localBooking, ...this.localPendingBookings];
       }
     }
+
+    // Clear selected seats after attempting to add to cart
+    this.selectedSeats = [];
 
     await this.loadBookings();
   }
@@ -447,6 +478,7 @@ export class AppStateService {
     lastName: string;
     email?: string;
     phoneNumber?: string;
+    profilePictureUrl?: string | null;
   }): Promise<void> {
     if (!this.isBrowser()) {
       return;
@@ -459,6 +491,7 @@ export class AppStateService {
         lastName: profile.lastName,
         email: profile.email,
         phoneNumber: profile.phoneNumber,
+        profilePictureUrl: profile.profilePictureUrl ?? undefined,
       }),
     );
 
@@ -469,12 +502,13 @@ export class AppStateService {
       lastName: profile.lastName,
       email: profile.email ?? this.userProfile.email,
       phone: profile.phoneNumber ?? this.userProfile.phone,
+      photo: profile.profilePictureUrl !== undefined ? profile.profilePictureUrl : this.userProfile.photo,
     };
   }
 
-  async uploadProfilePicture(file: File): Promise<void> {
+  async uploadProfilePicture(file: File): Promise<string | null> {
     if (!this.isBrowser()) {
-      return;
+      return null;
     }
 
     const pictureUrl = await firstValueFrom(this.api.uploadProfilePicture(file));
@@ -482,6 +516,8 @@ export class AppStateService {
       ...this.userProfile,
       photo: pictureUrl,
     };
+
+    return pictureUrl;
   }
 
   private async loadCartSafe(): Promise<ActiveCartDto | null> {
@@ -701,7 +737,7 @@ export class AppStateService {
       state: '',
       country: profile.countryName,
       countryCode: profile.countryCode,
-      photo: profile.profilePictureUrl,
+      photo: this.api.resolveProfilePictureUrl(profile.profilePictureUrl),
       memberSince: '',
       totalTrips: profile.totalTripsCount,
       totalDistanceTraveled: profile.totalDistanceTraveled ?? 0,
