@@ -1,91 +1,98 @@
-<div class="container challenges-dashboard" *ngIf="pointsService.pointsState$ | async as pointsState">
-  <div class="card notice" *ngIf="isLoading">Loading rewards data...</div>
-  <div class="card notice error" *ngIf="!isLoading && loadError">{{ loadError }}</div>
-  <section class="hero card">
-    <div>
-      <p class="eyebrow">Challenges & Rewards</p>
-      <h1>Keep your journeys rewarding</h1>
-      <p class="subtitle">Track onboarding wins, monthly streaks, and redeem points instantly.</p>
-    </div>
-    <div class="hero-balance">
-      <span>Total Points</span>
-      <strong>{{ pointsState.balance | number:'1.0-0' }}</strong>
-      <small>Spend your points directly at checkout.</small>
-    </div>
-  </section>
+<div class="loyalty-hub">
 
-  <section class="summary-grid">
-    <div class="summary-card card">
-      <h3>Points expiring soon</h3>
-      <div class="summary-value">{{ pointsState.expiringPointsAmount | number:'1.0-0' }}</div>
-      <p class="muted">Next expiry: {{ pointsState.nextExpiryDate || 'Not scheduled' }}</p>
-    </div>
-
-  </section>
-
-  <section class="challenge-section" *ngIf="pointsService.onboarding$ | async as onboarding">
-    <div class="section-header">
-      <div>
-        <h2>Onboarding Challenges</h2>
-        <p class="muted">Complete these once to boost your starter balance.</p>
+  <!-- Top Summary Card -->
+  <div class="hub-header card">
+    <button class="back-btn" routerLink="/profile">← Back</button>
+    <div class="hub-summary">
+      <div class="hub-points">
+        <span class="hub-pts-label">Your Points</span>
+        <strong class="hub-pts-value">{{ userProfile.loyaltyPointsBalance | number:'1.0-0' }}</strong>
       </div>
-      <span class="pill">One-time</span>
+      <div class="hub-expiry" *ngIf="userProfile.expiringPointsAmount > 0">
+        <span>⚠️ {{ userProfile.expiringPointsAmount | number:'1.0-0' }} pts expiring</span>
+        <span *ngIf="userProfile.nextExpiryDate">on {{ userProfile.nextExpiryDate | date:'mediumDate' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">Loading Loyalty Hub...</div>
+  <div *ngIf="!isLoading && loadError" class="error-state">{{ loadError }}</div>
+
+  <!-- Tabs -->
+  <div class="hub-tabs" *ngIf="!isLoading">
+    <button class="hub-tab" [class.active]="activeTab === 'challenges'" (click)="selectTab('challenges')">
+      🏆 Challenges
+    </button>
+    <button class="hub-tab" [class.active]="activeTab === 'history'" (click)="selectTab('history')">
+      📋 Points History
+    </button>
+  </div>
+
+  <!-- ── Challenges Tab ─────────────────────────────────────────────── -->
+  <div *ngIf="!isLoading && activeTab === 'challenges'" class="tab-content">
+
+    <div class="filter-chips">
+      <button class="chip" [class.active]="challengeFilter === 'active'"
+        (click)="selectFilter('active')">Active</button>
+      <button class="chip" [class.active]="challengeFilter === 'completed'"
+        (click)="selectFilter('completed')">Completed</button>
+    </div>
+
+    <div *ngIf="challenges.length === 0 && !loadError" class="empty-state">
+      No {{ challengeFilter }} challenges found.
     </div>
 
     <div class="challenge-grid">
-      <article class="challenge-card card" *ngFor="let task of onboarding">
+      <article class="challenge-card card" *ngFor="let c of challenges">
         <div class="challenge-header">
           <div>
-            <h3>{{ task.title }}</h3>
-            <p class="muted">{{ task.description }}</p>
+            <h3>{{ c.title }}</h3>
+            <p class="muted" *ngIf="c.description">{{ c.description }}</p>
           </div>
-          <span class="status" [class.claimed]="task.rewardClaimed">
-            {{ onboardingStatus(task) }}
+          <span class="status-badge" [class.completed]="c.isCompleted">
+            {{ c.isCompleted ? '✅ Done' : '⏳ In Progress' }}
           </span>
         </div>
-
-        <div class="progress">
-          <div class="progress-bar" [style.width.%]="onboardingProgress(task)"></div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" [style.width.%]="challengeProgress(c)"></div>
         </div>
-
         <div class="challenge-footer">
-          <span class="reward">+{{ task.rewardPoints }} pts</span>
-          <span class="status" [class.claimed]="task.rewardClaimed">Tracked automatically</span>
+          <span>{{ c.currentProgress }} / {{ c.goalValue }}</span>
+          <span class="reward-badge">+{{ c.rewardPoints }} pts</span>
         </div>
       </article>
     </div>
-  </section>
 
-  <section class="challenge-section" *ngIf="pointsService.monthly$ | async as monthly">
-    <div class="section-header">
-      <div>
-        <h2>Monthly Challenges</h2>
-        <p class="muted">Progress resets on the 1st of every month.</p>
+    <button class="btn btn-outline load-more-btn" *ngIf="hasMoreChallenges" [disabled]="isLoadingMoreChallenges"
+      (click)="loadMoreChallenges()">
+      {{ isLoadingMoreChallenges ? 'Loading...' : 'Load More' }}
+    </button>
+  </div>
+
+  <!-- ── Points History Tab ─────────────────────────────────────────── -->
+  <div *ngIf="!isLoading && activeTab === 'history'" class="tab-content">
+    <div *ngIf="historyError" class="error-state">{{ historyError }}</div>
+
+    <div *ngIf="pointHistory.length === 0 && !historyError" class="empty-state">
+      No point transactions found.
+    </div>
+
+    <div class="history-list">
+      <div class="history-item card" *ngFor="let tx of pointHistory">
+        <div class="history-info">
+          <span class="history-desc">{{ tx.description }}</span>
+          <span class="history-meta">{{ tx.source }} &bull; {{ tx.createdAt | date:'mediumDate' }}</span>
+        </div>
+        <span class="history-amount" [class.credit]="tx.amount > 0" [class.debit]="tx.amount < 0">
+          {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount }} pts
+        </span>
       </div>
-      <span class="pill">Recurring</span>
     </div>
 
-    <div class="challenge-grid">
-      <article class="challenge-card card" *ngFor="let task of monthly">
-        <div class="challenge-header">
-          <div>
-            <h3>{{ task.title }}</h3>
-            <p class="muted">{{ task.description }}</p>
-          </div>
-          <span class="status" [class.locked]="task.progress === 0" [class.claimed]="task.rewardClaimed">
-            {{ monthlyStatus(task) }}
-          </span>
-        </div>
+    <button class="btn btn-outline load-more-btn" *ngIf="hasMoreHistory" [disabled]="isLoadingMoreHistory"
+      (click)="loadMoreHistory()">
+      {{ isLoadingMoreHistory ? 'Loading...' : 'Load More' }}
+    </button>
+  </div>
 
-        <div class="progress">
-          <div class="progress-bar" [style.width.%]="monthlyProgress(task)"></div>
-        </div>
-
-        <div class="challenge-footer">
-          <span class="reward">{{ task.progress }}/{{ task.target }} • +{{ task.rewardPoints }} pts</span>
-          <span class="status" [class.claimed]="task.rewardClaimed">Tracked automatically</span>
-        </div>
-      </article>
-    </div>
-  </section>
 </div>

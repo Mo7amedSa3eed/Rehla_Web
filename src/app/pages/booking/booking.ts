@@ -109,6 +109,9 @@ export class BookingComponent implements OnInit {
       return;
     }
 
+    const normalizedPassengers = Math.max(1, Math.floor(this.passengers || 1));
+    this.passengers = normalizedPassengers;
+
     this.isSearching = true;
 
     try {
@@ -123,7 +126,7 @@ export class BookingComponent implements OnInit {
         fromStationId: this.fromStationId ?? undefined,
         toGovernorate: this.toGovernorate,
         toStationId: this.toStationId ?? undefined,
-        passengers: this.passengers,
+        passengers: normalizedPassengers,
         transport: this.transportMode === 'bus' ? 1 : 2,
         preferredAgencies,
       });

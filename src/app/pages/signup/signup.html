@@ -1,14 +1,22 @@
-<div class="signup-page">
-  <div class="signup-card card">
-    <div class="signup-header">
-      <div class="signup-badge">Start your journey</div>
-      <h1>Create your account</h1>
-      <p>Join Rihla to book trips, manage tickets, and explore routes.</p>
+<div class="auth-container">
+  <div class="animated-background">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="badge-glass">
+        <span class="pulse-dot"></span> Start your journey
+      </div>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-subtitle">Join Rihla to book trips, manage tickets, and explore routes.</p>
     </div>
 
     <form #signupForm="ngForm" (ngSubmit)="submit(signupForm)">
-      <div class="signup-grid">
-        <div class="form-group">
+      <div class="form-grid">
+        <div class="glass-input-group">
           <label>First Name</label>
           <input
             name="firstName"
@@ -17,12 +25,12 @@
             maxlength="50"
             [(ngModel)]="register.firstName"
             placeholder="Ahmed" />
-          <span class="error" *ngIf="signupForm.controls['firstName']?.invalid && (signupForm.controls['firstName']?.touched || signupForm.submitted)">
+          <span class="error-text" *ngIf="signupForm.controls['firstName']?.invalid && (signupForm.controls['firstName']?.touched || signupForm.submitted)">
             First name is required.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Family Name</label>
           <input
             name="familyName"
@@ -31,12 +39,12 @@
             maxlength="50"
             [(ngModel)]="register.familyName"
             placeholder="Mohamed" />
-          <span class="error" *ngIf="signupForm.controls['familyName']?.invalid && (signupForm.controls['familyName']?.touched || signupForm.submitted)">
+          <span class="error-text" *ngIf="signupForm.controls['familyName']?.invalid && (signupForm.controls['familyName']?.touched || signupForm.submitted)">
             Family name is required.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Last Name</label>
           <input
             name="lastName"
@@ -45,12 +53,12 @@
             maxlength="50"
             [(ngModel)]="register.lastName"
             placeholder="Hassan" />
-          <span class="error" *ngIf="signupForm.controls['lastName']?.invalid && (signupForm.controls['lastName']?.touched || signupForm.submitted)">
+          <span class="error-text" *ngIf="signupForm.controls['lastName']?.invalid && (signupForm.controls['lastName']?.touched || signupForm.submitted)">
             Last name is required.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Email Address</label>
           <input
             name="email"
@@ -59,25 +67,38 @@
             maxlength="255"
             [(ngModel)]="register.email"
             placeholder="you@example.com" />
-          <span class="error" *ngIf="signupForm.controls['email']?.invalid && (signupForm.controls['email']?.touched || signupForm.submitted)">
+          <span class="error-text" *ngIf="signupForm.controls['email']?.invalid && (signupForm.controls['email']?.touched || signupForm.submitted)">
             Enter a valid email.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Phone Number</label>
-          <input
-            name="phoneNumber"
-            required
-            pattern="^\+?[1-9]\d{7,14}$"
-            [(ngModel)]="register.phoneNumber"
-            placeholder="+201234567890" />
-          <span class="error" *ngIf="signupForm.controls['phoneNumber']?.invalid && (signupForm.controls['phoneNumber']?.touched || signupForm.submitted)">
-            Enter a valid phone number (E.164).
+          <div class="phone-input">
+            <select
+              name="phoneCode"
+              required
+              [(ngModel)]="selectedPhoneCode">
+              <option *ngFor="let code of phoneCodes" [value]="code.dialCode">
+                {{ code.countryName }} ({{ code.dialCode }})
+              </option>
+            </select>
+            <input
+              name="phoneLocalNumber"
+              required
+              [pattern]="phoneLocalPattern"
+              [attr.minlength]="phoneLocalMinLength"
+              [attr.maxlength]="phoneLocalMaxLength"
+              inputmode="numeric"
+              [(ngModel)]="phoneLocalNumber"
+              placeholder="1012345678" />
+          </div>
+          <span class="error-text" *ngIf="signupForm.controls['phoneLocalNumber']?.invalid && (signupForm.controls['phoneLocalNumber']?.touched || signupForm.submitted)">
+            Enter a valid phone number.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Password</label>
           <input
             name="password"
@@ -87,12 +108,12 @@
             pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"
             [(ngModel)]="register.password"
             placeholder="Password123" />
-          <span class="error" *ngIf="signupForm.controls['password']?.invalid && (signupForm.controls['password']?.touched || signupForm.submitted)">
+          <span class="error-text" *ngIf="signupForm.controls['password']?.invalid && (signupForm.controls['password']?.touched || signupForm.submitted)">
             Use 8+ characters with upper, lower, and a number.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Confirm Password</label>
           <input
             name="confirmPassword"
@@ -101,12 +122,12 @@
             minlength="8"
             [(ngModel)]="register.confirmPassword"
             placeholder="Repeat password" />
-          <span class="error" *ngIf="passwordMismatch && (signupForm.controls['confirmPassword']?.touched || signupForm.submitted)">
+          <span class="error-text" *ngIf="passwordMismatch && (signupForm.controls['confirmPassword']?.touched || signupForm.submitted)">
             Passwords do not match.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Gender</label>
           <select name="gender" required [(ngModel)]="register.gender">
             <option [ngValue]="1">Male</option>
@@ -115,19 +136,19 @@
           </select>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Date of Birth</label>
           <input
             name="dateOfBirth"
             type="date"
             required
             [(ngModel)]="register.dateOfBirth" />
-          <span class="error" *ngIf="signupForm.controls['dateOfBirth']?.invalid && (signupForm.controls['dateOfBirth']?.touched || signupForm.submitted)">
+          <span class="error-text" *ngIf="signupForm.controls['dateOfBirth']?.invalid && (signupForm.controls['dateOfBirth']?.touched || signupForm.submitted)">
             Date of birth is required.
           </span>
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>National ID (optional)</label>
           <input
             name="nationalIdNumber"
@@ -136,7 +157,7 @@
             placeholder="29805151234567" />
         </div>
 
-        <div class="form-group">
+        <div class="glass-input-group">
           <label>Country</label>
           <select name="countryCode" required [(ngModel)]="register.countryCode">
             <option *ngIf="!countries.length" value="EG">Egypt</option>
@@ -148,15 +169,18 @@
       </div>
 
       <div class="form-actions">
-        <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+        
         <button
-          class="btn btn-primary"
+          class="btn-glow full-width"
           type="submit"
           [disabled]="signupForm.invalid || passwordMismatch || isSubmitting">
-          {{ isSubmitting ? 'Creating account...' : 'Create Account' }}
+          <span>{{ isSubmitting ? 'Creating account...' : 'Create Account' }}</span>
+          <span class="arrow">→</span>
         </button>
-        <div class="helper-text">
-          Already have an account? <a routerLink="/login">Sign in</a>
+        
+        <div class="helper-text-center">
+          Already have an account? <a class="link-glow" routerLink="/login">Sign in</a>
         </div>
       </div>
     </form>

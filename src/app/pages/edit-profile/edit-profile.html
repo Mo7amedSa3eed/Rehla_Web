@@ -1,123 +1,131 @@
 <div class="page-wrapper">
-
   <div class="page-header">
     <h1>Edit Profile</h1>
   </div>
 
   <div class="profile-card">
-
-
+    <!-- Avatar Section -->
     <div class="avatar-section">
       <div class="avatar-wrapper">
-        <img *ngIf="user.photo; else defaultIcon"
-             [src]="user.photo"
-             class="avatar-img" />
-
+        <img *ngIf="user.photo; else defaultIcon" [src]="user.photo" class="avatar-img" />
         <ng-template #defaultIcon>
           <div class="avatar-default">👤</div>
         </ng-template>
       </div>
-
       <label class="change-photo-btn btn btn-outline">
         Change Photo
-        <input type="file" hidden (change)="onPhotoSelected($event)" />
+        <input type="file" hidden accept="image/*" (change)="onPhotoSelected($event)" />
       </label>
     </div>
 
-
     <form class="form-grid" #profileForm="ngForm" (ngSubmit)="saveChanges(profileForm)">
 
+      <!-- First Name -->
       <div class="form-group">
-        <label>First Name</label>
-        <input
-          name="firstName"
-          required
-          minlength="2"
-          maxlength="50"
-          [(ngModel)]="user.firstName"
-          placeholder="First Name" />
-        <span
-          class="error"
-          *ngIf="profileForm.controls['firstName']?.invalid && (profileForm.controls['firstName']?.touched || profileForm.submitted)">
-          <span *ngIf="profileForm.controls['firstName']?.errors?.['required']">First name is required.</span>
-          <span *ngIf="profileForm.controls['firstName']?.errors?.['minlength']">Minimum 2 characters.</span>
+        <label>First Name *</label>
+        <input name="firstName" required maxlength="50" [(ngModel)]="user.firstName" placeholder="First Name" />
+        <span class="error" *ngIf="profileForm.controls['firstName']?.invalid && (profileForm.controls['firstName']?.touched || profileForm.submitted)">
+          First name is required.
         </span>
       </div>
 
+      <!-- Family Name -->
       <div class="form-group">
         <label>Family Name</label>
-        <input
-          name="familyName"
-          minlength="2"
-          maxlength="50"
-          [(ngModel)]="user.familyName"
-          placeholder="Family Name" />
-        <span
-          class="error"
-          *ngIf="profileForm.controls['familyName']?.invalid && (profileForm.controls['familyName']?.touched || profileForm.submitted)">
-          <span *ngIf="profileForm.controls['familyName']?.errors?.['minlength']">Minimum 2 characters.</span>
-        </span>
+        <input name="familyName" maxlength="50" [(ngModel)]="user.familyName" placeholder="Family Name (optional)" />
       </div>
 
+      <!-- Last Name -->
       <div class="form-group">
-        <label>Last Name</label>
-        <input
-          name="lastName"
-          required
-          minlength="2"
-          maxlength="50"
-          [(ngModel)]="user.lastName"
-          placeholder="Last Name" />
-        <span
-          class="error"
-          *ngIf="profileForm.controls['lastName']?.invalid && (profileForm.controls['lastName']?.touched || profileForm.submitted)">
-          <span *ngIf="profileForm.controls['lastName']?.errors?.['required']">Last name is required.</span>
-          <span *ngIf="profileForm.controls['lastName']?.errors?.['minlength']">Minimum 2 characters.</span>
+        <label>Last Name *</label>
+        <input name="lastName" required maxlength="50" [(ngModel)]="user.lastName" placeholder="Last Name" />
+        <span class="error" *ngIf="profileForm.controls['lastName']?.invalid && (profileForm.controls['lastName']?.touched || profileForm.submitted)">
+          Last name is required.
         </span>
       </div>
 
+      <!-- Email -->
       <div class="form-group">
         <label>Email Address</label>
-        <input
-          name="email"
-          type="email"
-          maxlength="255"
-          [(ngModel)]="user.email"
-          placeholder="Email Address" />
-        <span
-          class="error"
-          *ngIf="profileForm.controls['email']?.invalid && (profileForm.controls['email']?.touched || profileForm.submitted)">
-          <span *ngIf="profileForm.controls['email']?.errors?.['email']">Enter a valid email address.</span>
-        </span>
+        <input name="email" type="email" maxlength="255" [(ngModel)]="user.email" placeholder="Email Address" />
       </div>
 
+      <!-- Phone -->
       <div class="form-group">
         <label>Phone Number</label>
-        <input
-          name="phoneNumber"
-          pattern="^\+?[1-9]\d{7,14}$"
-          minlength="8"
-          maxlength="15"
-          [(ngModel)]="user.phoneNumber"
-          placeholder="+201234567890" />
-        <span
-          class="error"
-          *ngIf="profileForm.controls['phoneNumber']?.invalid && (profileForm.controls['phoneNumber']?.touched || profileForm.submitted)">
-          <span *ngIf="profileForm.controls['phoneNumber']?.errors?.['pattern']">Enter a valid phone number (E.164).</span>
-          <span *ngIf="profileForm.controls['phoneNumber']?.errors?.['minlength']">Minimum 8 digits.</span>
-        </span>
+        <div class="phone-input">
+          <select name="phoneCode" [(ngModel)]="selectedPhoneCode">
+            <option *ngFor="let code of phoneCodes" [value]="code.dialCode">
+              {{ code.countryName }} ({{ code.dialCode }})
+            </option>
+          </select>
+          <input name="phoneLocalNumber" [pattern]="phoneLocalPattern"
+            [attr.minlength]="phoneLocalMinLength" [attr.maxlength]="phoneLocalMaxLength"
+            inputmode="numeric" [(ngModel)]="phoneLocalNumber" placeholder="1012345678" />
+        </div>
       </div>
 
+      <!-- Country (read-only) -->
+      <div class="form-group" *ngIf="state.userProfile.country">
+        <label>Country</label>
+        <div class="readonly-field">{{ state.userProfile.country }}</div>
+        <p class="field-hint">Country cannot be changed.</p>
+      </div>
+
+      <!-- Identity Details Section -->
+      <div class="form-group identity-section">
+        <h3 class="identity-title">🪪 Identity Details</h3>
+
+        <!-- LOCKED: identity already set -->
+        <ng-container *ngIf="hasSetIdentity">
+          <div class="identity-locked-card">
+            <div class="locked-badge">🔒 Locked</div>
+            <div class="locked-row">
+              <span class="locked-label">ID Type</span>
+              <span class="locked-value">{{ idTypeLabel }}</span>
+            </div>
+            <div class="locked-row">
+              <span class="locked-label">ID Number</span>
+              <span class="locked-value">{{ idNumberDisplay }}</span>
+            </div>
+            <p class="locked-hint">Identity details cannot be changed once set. Contact support if you need changes.</p>
+          </div>
+        </ng-container>
+
+        <!-- UNLOCKED: allow setting identity -->
+        <ng-container *ngIf="!hasSetIdentity">
+          <div class="identity-warning">
+            ⚠️ Identity details are <strong>permanent</strong> once saved. Choose carefully.
+          </div>
+
+          <div class="id-type-chips">
+            <button type="button" class="chip" [class.active]="selectedIdType === 'none'" (click)="selectedIdType = 'none'; idNumber = ''">None</button>
+            <button type="button" class="chip" [class.active]="selectedIdType === 'national'" (click)="selectedIdType = 'national'">National ID</button>
+            <button type="button" class="chip" [class.active]="selectedIdType === 'passport'" (click)="selectedIdType = 'passport'">Passport</button>
+          </div>
+
+          <div *ngIf="selectedIdType !== 'none'" class="form-group" style="margin-top: 12px">
+            <label>{{ idNumberLabel }}</label>
+            <input
+              name="idNumber"
+              [(ngModel)]="idNumber"
+              [placeholder]="idNumberPlaceholder"
+              [attr.maxlength]="selectedIdType === 'passport' ? 50 : 14"
+              [attr.inputmode]="selectedIdType === 'national' ? 'numeric' : 'text'" />
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Save/Cancel Buttons -->
       <div class="button-row">
-        <button
-          class="save-btn btn btn-primary"
-          type="submit"
-          [disabled]="profileForm.invalid">
-          Save Changes
+        <button class="save-btn btn btn-primary" type="submit" [disabled]="profileForm.invalid || isSaving">
+          {{ isSaving ? 'Saving...' : 'Save Changes' }}
         </button>
         <button class="cancel-btn btn btn-outline" type="button" (click)="cancel()">Cancel</button>
       </div>
-    </form>
 
+      <p class="save-success" *ngIf="saveSuccess">✅ Profile saved successfully!</p>
+      <p class="save-error" *ngIf="saveError">❌ {{ saveError }}</p>
+    </form>
   </div>
 </div>

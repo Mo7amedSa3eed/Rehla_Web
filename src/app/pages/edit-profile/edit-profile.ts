@@ -3,6 +3,24 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../../services/state';
 import { Router } from '@angular/router';
+import { ApiService } from '../../services/api';
+import { firstValueFrom } from 'rxjs';
+import {
+  buildE164Number,
+  DEFAULT_PHONE_CODE,
+  FALLBACK_PHONE_CODES,
+  getLocalNumberConstraints,
+  getLocalNumberPattern,
+  isLocalNumberValid,
+  mapCountriesToPhoneCodes,
+  PhoneCodeOption,
+  splitPhoneNumber,
+} from '../../shared/phone-codes';
+
+const nameRegex = /^[a-zA-Z\s\-']+$/;
+const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const nationalIdRegex = /^[23]\d{13}$/;
+const passportRegex = /^[a-zA-Z0-9\- ]{1,50}$/;
 
 @Component({
   selector: 'app-edit-profile',
@@ -20,69 +38,211 @@ export class EditProfileComponent implements OnInit {
     phoneNumber?: string;
     photo?: string | null;
   };
+
+  // Identity fields
+  selectedIdType: 'none' | 'national' | 'passport' = 'none';
+  idNumber = '';
+
+  phoneCodes: PhoneCodeOption[] = FALLBACK_PHONE_CODES;
+  selectedPhoneCode = DEFAULT_PHONE_CODE;
+  phoneLocalNumber = '';
   selectedPhoto: File | null = null;
+
+  isSaving = false;
+  saveError = '';
+  saveSuccess = false;
 
   constructor(
     public state: AppStateService,
-    private router: Router
+    private router: Router,
+    private api: ApiService,
   ) {
+    const p = this.state.userProfile;
     this.user = {
-      firstName: this.state.userProfile.firstName,
-      familyName: this.state.userProfile.familyName,
-      lastName: this.state.userProfile.lastName,
-      email: this.state.userProfile.email,
-      phoneNumber: this.state.userProfile.phone,
-      photo: this.state.userProfile.photo,
+      firstName: p.firstName,
+      familyName: p.familyName,
+      lastName: p.lastName,
+      email: p.email,
+      phoneNumber: p.phone,
+      photo: p.photo,
     };
+    this.applyPhoneSplit(this.user.phoneNumber ?? '');
+    this.initIdentity();
   }
 
   async ngOnInit(): Promise<void> {
     await this.state.loadProfile().catch(() => undefined);
+    const p = this.state.userProfile;
     this.user = {
-      firstName: this.state.userProfile.firstName,
-      familyName: this.state.userProfile.familyName,
-      lastName: this.state.userProfile.lastName,
-      email: this.state.userProfile.email,
-      phoneNumber: this.state.userProfile.phone,
-      photo: this.state.userProfile.photo,
+      firstName: p.firstName,
+      familyName: p.familyName,
+      lastName: p.lastName,
+      email: p.email,
+      phoneNumber: p.phone,
+      photo: p.photo,
     };
+    await this.loadPhoneCodes();
+    this.applyPhoneSplit(this.user.phoneNumber ?? '');
+    this.initIdentity();
   }
 
-  onPhotoSelected(event: any) {
+  private initIdentity(): void {
+    const p = this.state.userProfile;
+    if (p.hasSetIdentityDetails && p.idType) {
+      const t = p.idType;
+      this.selectedIdType = (t === 1 || t === 'NationalId') ? 'national' : 'passport';
+      this.idNumber = p.idNumber ?? '';
+    } else {
+      this.selectedIdType = 'none';
+      this.idNumber = '';
+    }
+  }
+
+  get hasSetIdentity(): boolean {
+    return this.state.userProfile.hasSetIdentityDetails === true;
+  }
+
+  get idTypeLabel(): string {
+    if (!this.hasSetIdentity) return '';
+    const t = this.state.userProfile.idType;
+    if (t === 1 || t === 'NationalId') return 'National ID';
+    if (t === 2 || t === 'Passport') return 'Passport';
+    return String(t ?? '');
+  }
+
+  get idNumberDisplay(): string {
+    return this.state.userProfile.idNumber ?? '';
+  }
+
+  get idNumberPlaceholder(): string {
+    return this.selectedIdType === 'passport' ? 'e.g. A12345678' : '14-digit national ID';
+  }
+
+  get idNumberLabel(): string {
+    return this.selectedIdType === 'passport' ? 'Passport Number' : 'National ID Number';
+  }
+
+  private async loadPhoneCodes(): Promise<void> {
+    try {
+      const countries = await firstValueFrom(this.api.getCountries());
+      this.phoneCodes = mapCountriesToPhoneCodes(countries ?? []);
+    } catch {
+      this.phoneCodes = FALLBACK_PHONE_CODES;
+    }
+  }
+
+  private applyPhoneSplit(phoneNumber: string): void {
+    if (!phoneNumber) {
+      this.selectedPhoneCode = DEFAULT_PHONE_CODE;
+      this.phoneLocalNumber = '';
+      return;
+    }
+    const parts = splitPhoneNumber(phoneNumber, this.phoneCodes);
+    this.selectedPhoneCode = parts.dialCode;
+    this.phoneLocalNumber = parts.localNumber;
+  }
+
+  get phoneLocalMinLength(): number {
+    return getLocalNumberConstraints(this.selectedPhoneCode).min;
+  }
+
+  get phoneLocalMaxLength(): number {
+    return getLocalNumberConstraints(this.selectedPhoneCode).max;
+  }
+
+  get phoneLocalPattern(): string {
+    return getLocalNumberPattern(this.selectedPhoneCode);
+  }
+
+  onPhotoSelected(event: any): void {
     const file = event.target.files[0];
     if (!file) return;
-
     this.selectedPhoto = file;
-
     const reader = new FileReader();
-    reader.onload = () => {
-      this.user.photo = reader.result as string;
-    };
+    reader.onload = () => { this.user.photo = reader.result as string; };
     reader.readAsDataURL(file);
   }
 
+  validateForm(): string | null {
+    if (!this.user.firstName.trim() || !nameRegex.test(this.user.firstName)) {
+      return 'First name is required and must contain only letters, spaces, hyphens, or apostrophes.';
+    }
+    if (!this.user.lastName.trim() || !nameRegex.test(this.user.lastName)) {
+      return 'Last name is required and must contain only letters, spaces, hyphens, or apostrophes.';
+    }
+    if (this.user.email && !emailRegex.test(this.user.email)) {
+      return 'Please enter a valid email address.';
+    }
+    if (this.phoneLocalNumber.trim() && !isLocalNumberValid(this.selectedPhoneCode, this.phoneLocalNumber)) {
+      return 'Please enter a valid phone number.';
+    }
+    // Identity validation (only if not yet set)
+    if (!this.hasSetIdentity) {
+      if (this.selectedIdType === 'national') {
+        if (!nationalIdRegex.test(this.idNumber.trim())) {
+          return 'National ID must be 14 digits starting with 2 or 3.';
+        }
+      } else if (this.selectedIdType === 'passport') {
+        if (!passportRegex.test(this.idNumber.trim())) {
+          return 'Passport number can only contain letters, digits, spaces, and hyphens (max 50 chars).';
+        }
+      }
+    }
+    return null;
+  }
+
   async saveChanges(form: NgForm): Promise<void> {
-    if (form.invalid) {
+    this.saveError = '';
+    this.saveSuccess = false;
+
+    if (form.invalid) return;
+
+    const validationError = this.validateForm();
+    if (validationError) {
+      this.saveError = validationError;
       return;
     }
 
+    this.isSaving = true;
     try {
+      // Step 1: Upload photo first if a new one was selected
       let uploadedPhotoUrl = this.user.photo ?? null;
-
       if (this.selectedPhoto) {
         uploadedPhotoUrl = await this.state.uploadProfilePicture(this.selectedPhoto);
         this.user.photo = uploadedPhotoUrl;
       }
 
+      // Step 2: Build phone number
+      const fullPhoneNumber = this.phoneLocalNumber.trim()
+        ? buildE164Number(this.selectedPhoneCode, this.phoneLocalNumber)
+        : undefined;
+
+      // Step 3: Build identity payload (only if not locked)
+      let idType: number | undefined;
+      let idNumber: string | undefined;
+      if (!this.hasSetIdentity) {
+        if (this.selectedIdType === 'national') { idType = 1; idNumber = this.idNumber.trim(); }
+        else if (this.selectedIdType === 'passport') { idType = 2; idNumber = this.idNumber.trim(); }
+      }
+
+      // Step 4: Send profile update
       await this.state.saveProfile({
-        ...this.user,
+        firstName: this.user.firstName.trim(),
+        familyName: this.user.familyName?.trim() ?? '',
+        lastName: this.user.lastName.trim(),
+        email: this.user.email?.trim(),
+        phoneNumber: fullPhoneNumber,
         profilePictureUrl: uploadedPhotoUrl,
+        idType,
+        idNumber,
       });
 
-      await this.router.navigate(['/profile']);
+      this.saveSuccess = true;
+      setTimeout(() => this.router.navigate(['/profile']), 800);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save profile';
-      alert(message);
+      this.saveError = error instanceof Error ? error.message : 'Failed to save profile.';
+    } finally {
+      this.isSaving = false;
     }
   }
 

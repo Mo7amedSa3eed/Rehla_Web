@@ -204,6 +204,7 @@ export interface AddToCartRequest {
 }
 
 export interface CartPassengerDto {
+  passengerId?: number;
   name: string;
   idNumber: string;
   seatNumber: string;
@@ -230,6 +231,7 @@ export interface ActiveCartDto {
 
 export interface TicketDto {
   bookingId: number;
+  userId?: number;
   ownerId?: number;
   status: string;
   paymentStatus: string;
@@ -239,10 +241,21 @@ export interface TicketDto {
   isMarketplacePurchase?: boolean;
   isOfferedForResale?: boolean;
   activeListingId?: number | null;
+  marketplaceListingId?: number | null;
+  listingId?: number | null;
+  refundStatus?: 'Requested' | 'Accepted' | 'Approved' | 'Rejected' | string | null;
   agencyName: string;
+  agencyNameAr?: string | null;
   className: string;
+  classNameAr?: string | null;
+  originGov?: string;
+  originGovernorateAr?: string | null;
   originStation: string;
+  originStationNameAr?: string | null;
+  destinationGov?: string;
+  destinationGovernorateAr?: string | null;
   destinationStation: string;
+  destinationStationNameAr?: string | null;
   boardingTime: string;
   dropoffTime: string;
   passengers: CartPassengerDto[];
@@ -265,6 +278,10 @@ export interface UserProfileDto {
   nextExpiryDate: string | null;
   activeChallenges: UserChallengeDto[];
   walletBalance: number;
+  idType?: number | 'NationalId' | 'Passport' | string | null;
+  idNumber?: string | null;
+  hasSetIdentityDetails?: boolean;
+  preferredLanguage?: string;
   // Kept optional for backward compatibility with older DTOs.
   totalDistanceTraveled?: number;
 }
@@ -288,6 +305,8 @@ export interface UpdateProfileRequest {
   email?: string;
   phoneNumber?: string;
   profilePictureUrl?: string | null;
+  idType?: number | string;
+  idNumber?: string;
 }
 
 export interface SearchTripsParams {
@@ -333,6 +352,31 @@ export interface MarketplaceListRequest {
   askingPrice: number;
 }
 
+export interface PointTransactionDto {
+  transactionId: number;
+  amount: number;
+  description: string;
+  source: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface CreateSupportTicketRequest {
+  title: string;
+  description: string;
+  issueCategory: number;
+}
+
+export interface SupportTicketDto {
+  ticketId: number;
+  title: string;
+  description: string;
+  category: string;
+  status: string;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
 export interface MarketplaceTripDetailsDto {
   origin: string;
   destination: string;
@@ -340,15 +384,21 @@ export interface MarketplaceTripDetailsDto {
   destinationGov?: string;
   time: string;
   class: string;
+  agencyName?: string;
 }
 
 export interface MarketplaceListingDto {
   listingId: number;
+  sellerId?: number;
   ownerId?: number;
   originalPrice: number;
   askingPrice: number;
   sellerName: string;
+  agencyName?: string;
+  agency?: string;
   seatsCount: number;
+  seatsBooked?: number;
+  transportType?: string;
   tripDetails: MarketplaceTripDetailsDto;
 }
 
@@ -747,9 +797,10 @@ export class ApiService {
     return this.buyMarketplaceTicket(listingId);
   }
 
-  buyMarketplaceTicket(listingId: number): Observable<void> {
+  buyMarketplaceTicket(listingId: number, passengers?: { passengerName: string; idType?: string; idNumber?: string }[]): Observable<void> {
+    const body = passengers ? { passengers } : null;
     return this.http
-      .post<ApiResponse<null>>(`${this.baseUrl}/Marketplace/buy/${listingId}`, null, {
+      .post<ApiResponse<null>>(`${this.baseUrl}/Marketplace/buy/${listingId}`, body, {
         headers: this.authHeaders(),
       })
       .pipe(map((response) => {
@@ -760,6 +811,24 @@ export class ApiService {
   cancelMarketplaceListing(listingId: number): Observable<void> {
     return this.http
       .post<ApiResponse<null>>(`${this.baseUrl}/Marketplace/cancel/${listingId}`, null, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => {
+        this.unwrap(response);
+      }));
+  }
+
+  getPassengerQrPayload(bookingId: number, passengerId: number): Observable<string> {
+    return this.http
+      .get<ApiResponse<string>>(`${this.baseUrl}/Bookings/${bookingId}/passengers/${passengerId}/qr-payload`, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => this.unwrap(response)));
+  }
+
+  requestRefund(bookingId: number): Observable<void> {
+    return this.http
+      .post<ApiResponse<null>>(`${this.baseUrl}/Bookings/${bookingId}/refund-request`, {}, {
         headers: this.authHeaders(),
       })
       .pipe(map((response) => {
@@ -867,6 +936,14 @@ export class ApiService {
       .pipe(map((response) => this.unwrap(response)));
   }
 
+  createSupportTicket(payload: CreateSupportTicketRequest): Observable<SupportTicketDto> {
+    return this.http
+      .post<ApiResponse<SupportTicketDto>>(`${this.baseUrl}/Support/tickets`, payload, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => this.unwrap(response)));
+  }
+
   private unwrap<T>(response: ApiResponse<T>): T {
     if (response.success) {
       return response.data;
@@ -899,3 +976,4 @@ export class ApiService {
     return localStorage.getItem('accessToken');
   }
 }
+

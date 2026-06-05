@@ -50,7 +50,7 @@ export class PaymentComponent implements OnInit {
       } else {
         await this.state.checkoutWallet();
       }
-      await this.router.navigate(['/my-bookings']);
+      await this.router.navigate(['/my-tickets']);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Payment failed';
       alert(message);
@@ -62,6 +62,6 @@ export class PaymentComponent implements OnInit {
   async cancel(): Promise<void> {
     this.state.currentPaymentBooking = null;
     this.state.buyingMarketplaceTicketId = null;
-    await this.router.navigate(['/my-bookings']);
+    await this.router.navigate(['/my-tickets']);
   }
 }

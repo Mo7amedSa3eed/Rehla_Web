@@ -1,14 +1,22 @@
-<div class="login-page">
-  <div class="login-card card">
-    <div class="login-header">
-      <div class="login-badge">Welcome back</div>
-      <h1>Sign in to Rihla</h1>
-      <p>Access your bookings, tickets, and wallet.</p>
+<div class="auth-container">
+  <div class="animated-background">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="badge-glass">
+        <span class="pulse-dot"></span> Welcome back
+      </div>
+      <h1 class="auth-title">Sign in to Rihla</h1>
+      <p class="auth-subtitle">Access your bookings, tickets, and wallet.</p>
     </div>
 
     <form #loginForm="ngForm" (ngSubmit)="submit(loginForm)">
       <div class="form-stack">
-        <div class="form-group">
+        <div class="form-group glass-input-group">
           <label>Email Address</label>
           <input
             name="email"
@@ -19,7 +27,7 @@
             placeholder="you@example.com" />
         </div>
 
-        <div class="form-group">
+        <div class="form-group glass-input-group">
           <label>Password</label>
           <input
             name="password"
@@ -32,18 +40,22 @@
       </div>
 
       <div class="form-actions">
-        <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
-        <div class="helper-text helper-text-right">
-          <a routerLink="/auth/forgot-password">Forgot password?</a>
+        <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+        
+        <div class="helper-row">
+          <a class="link-glow" routerLink="/auth/forgot-password">Forgot password?</a>
         </div>
+
         <button
-          class="btn btn-primary"
+          class="btn-glow full-width"
           type="submit"
           [disabled]="loginForm.invalid || isSubmitting">
-          {{ isSubmitting ? 'Signing in...' : 'Sign In' }}
+          <span>{{ isSubmitting ? 'Signing in...' : 'Sign In' }}</span>
+          <span class="arrow">→</span>
         </button>
-        <div class="helper-text">
-          New here? <a routerLink="/signup">Create an account</a>
+        
+        <div class="helper-text-center">
+          New here? <a class="link-glow" routerLink="/signup">Create an account</a>
         </div>
       </div>
     </form>

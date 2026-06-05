@@ -44,13 +44,7 @@
       <p class="old-price">Original: ${{ (ticket.originalPrice || ticket.price) | number:'1.2-2' }}</p>
 
       <label for="askingPrice" class="label">Resale Price</label>
-      <input
-        id="askingPrice"
-        type="number"
-        min="1"
-        step="0.01"
-        [(ngModel)]="askingPrice"
-      />
+      <input id="askingPrice" type="number" min="1" step="0.01" [(ngModel)]="askingPrice" />
     </div>
 
     <div class="actions">

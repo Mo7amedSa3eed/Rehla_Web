@@ -17,7 +17,7 @@
         <p>{{ ticket.time }}</p>
       </div>
       <div>
-        <span class="label">Passengers</span>
+        <span class="label">Total Passengers</span>
         <p>{{ ticket.passengers }}</p>
       </div>
       <div>
@@ -30,8 +30,39 @@
       </div>
     </div>
 
+    <!-- Passenger Information Form -->
+    <div class="passenger-form-section">
+      <h3>Passenger Information</h3>
+      <p class="form-instructions">Please provide details for all {{ passengers.length }} passenger(s) below.</p>
+
+      <div class="passenger-row" *ngFor="let pax of passengers; let i = index">
+        <h4 class="pax-title">Passenger {{ i + 1 }}</h4>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" [(ngModel)]="pax.passengerName" placeholder="e.g. Ahmed Mohamed" required />
+          </div>
+
+          <ng-container *ngIf="isTrain">
+            <div class="form-group">
+              <label>ID Type *</label>
+              <select [(ngModel)]="pax.idType">
+                <option value="NationalId">National ID</option>
+                <option value="Passport">Passport</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ID Number *</label>
+              <input type="text" [(ngModel)]="pax.idNumber" placeholder="Enter ID number" required />
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
     <div class="actions">
-      <button class="btn btn-primary" [disabled]="isSubmitting" (click)="confirmPurchase()">
+      <button class="btn btn-primary" [disabled]="isSubmitting || !isFormValid" (click)="confirmPurchase()">
         {{ isSubmitting ? 'Processing...' : 'Confirm Purchase' }}
       </button>
       <button class="btn btn-outline" type="button" (click)="cancel()">Cancel</button>

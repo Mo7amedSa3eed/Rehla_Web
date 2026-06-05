@@ -169,14 +169,13 @@
 
       <div class="form-group">
         <label>Passengers</label>
-
-        <select [(ngModel)]="passengers">
-          <option [ngValue]="1">1 Passenger</option>
-          <option [ngValue]="2">2 Passengers</option>
-          <option [ngValue]="3">3 Passengers</option>
-          <option [ngValue]="4">4 Passengers</option>
-        </select>
-
+        <input
+          type="number"
+          min="1"
+          step="1"
+          inputmode="numeric"
+          [(ngModel)]="passengers"
+          placeholder="1" />
       </div>
 
     </div>

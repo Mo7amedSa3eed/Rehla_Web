@@ -1,0 +1,132 @@
+.report-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px;
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .back-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+    }
+  }
+
+  .report-card {
+    background: #1a3045;
+    border-radius: 16px;
+    padding: 28px;
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 20px;
+
+      label {
+        font-size: 0.9rem;
+        color: #8ba0b8;
+        font-weight: 500;
+
+        .char-count {
+          font-size: 0.8rem;
+          color: #5a6a80;
+        }
+      }
+
+      input, select, textarea {
+        background: #0b1929;
+        border: 1px solid #1e3a52;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        padding: 12px;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+
+        &::placeholder { color: rgba(255,255,255,0.35); }
+        &:focus { border-color: #00e5ff; }
+      }
+
+      textarea { resize: vertical; min-height: 120px; }
+
+      .error {
+        color: #ff6b6b;
+        font-size: 0.8rem;
+      }
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      background: linear-gradient(90deg, #00e5ff, #007aff);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
+
+    .submit-error {
+      color: #ff6b6b;
+      margin-top: 12px;
+      text-align: center;
+    }
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+
+    .modal-card {
+      background: #1a3045;
+      border-radius: 20px;
+      padding: 32px;
+      text-align: center;
+      max-width: 380px;
+      width: 100%;
+
+      .success-icon { font-size: 3rem; margin-bottom: 16px; }
+      h2 { color: #00e5ff; margin-bottom: 12px; }
+      p { color: #8ba0b8; margin-bottom: 16px; line-height: 1.6; }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(90deg, #00e5ff, #007aff);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+    }
+  }
+}

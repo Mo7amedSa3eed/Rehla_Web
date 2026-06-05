@@ -1,0 +1,69 @@
+<div class="report-page">
+  <div class="page-header">
+    <button class="back-btn" routerLink="/profile">←</button>
+    <h1>Report an Issue</h1>
+  </div>
+
+  <div class="report-card card">
+    <form (ngSubmit)="submit()" #reportForm="ngForm">
+
+      <!-- Category -->
+      <div class="form-group">
+        <label for="issueCategory">Issue Category</label>
+        <select id="issueCategory" name="issueCategory" [(ngModel)]="issueCategory">
+          <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.label }}</option>
+        </select>
+      </div>
+
+      <!-- Title -->
+      <div class="form-group">
+        <label for="issueTitle">Title *</label>
+        <input
+          id="issueTitle"
+          name="title"
+          type="text"
+          maxlength="200"
+          required
+          [(ngModel)]="title"
+          placeholder="Brief summary of the issue" />
+        <span class="error" *ngIf="titleInvalid">Title must not exceed 200 characters.</span>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="issueDesc">Description * <span class="char-count">({{ descriptionCharCount }}/1000)</span></label>
+        <textarea
+          id="issueDesc"
+          name="description"
+          rows="5"
+          maxlength="1000"
+          required
+          [(ngModel)]="description"
+          placeholder="Please describe the issue in detail (minimum 10 characters)..."></textarea>
+        <span class="error" *ngIf="descriptionInvalid">
+          {{ description.trim().length < 10 ? 'Description must be at least 10 characters.' : 'Description cannot exceed 1000 characters.' }}
+        </span>
+      </div>
+
+      <button class="btn btn-primary submit-btn" type="submit" [disabled]="!isFormValid || isSubmitting">
+        {{ isSubmitting ? 'Submitting...' : '🚨 Submit Report' }}
+      </button>
+
+      <p class="submit-error" *ngIf="submitError">❌ {{ submitError }}</p>
+    </form>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal-overlay" *ngIf="showSuccessModal">
+    <div class="modal-card card">
+      <div class="success-icon">✅</div>
+      <h2>Report Submitted!</h2>
+      <p *ngIf="createdTicket">
+        Ticket <strong>#{{ createdTicket.ticketId }}</strong> has been created.<br/>
+        Status: <strong>{{ createdTicket.status }}</strong>
+      </p>
+      <p>Our team will review your issue and get back to you.</p>
+      <button class="btn btn-primary" (click)="closeSuccessModal()">Back to Profile</button>
+    </div>
+  </div>
+</div>

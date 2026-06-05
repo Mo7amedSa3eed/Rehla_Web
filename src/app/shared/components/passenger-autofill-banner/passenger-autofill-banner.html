@@ -1,0 +1,14 @@
+<div class="autofill-banner" [class.success]="isAutofilled">
+  <div class="banner-content">
+    <div class="icon">{{ isAutofilled ? '✅' : '⚡' }}</div>
+    <div class="text">
+      <h4>{{ isAutofilled ? 'Autofill Applied' : 'Traveling together?' }}</h4>
+      <p>{{ isAutofilled ? 'Contact details copied to all passengers.' : 'Save time by copying the first passenger\'s contact details to the rest.' }}</p>
+      <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+    </div>
+  </div>
+  
+  <button class="btn-autofill" (click)="onAutofillClick()" type="button">
+    {{ isAutofilled ? 'Re-Fill' : 'Auto Fill' }}
+  </button>
+</div>

@@ -1,0 +1,85 @@
+<div class="passenger-card" [formGroup]="group">
+  <div class="passenger-header">
+    <h2 class="passenger-title">
+      <span *ngIf="showHeaderIcon">👤 </span>
+      Passenger {{ index + 1 }}
+      <span class="seat-badge" *ngIf="seatLabel">Seat: {{ seatLabel }}</span>
+    </h2>
+  </div>
+
+  <div class="form-fields">
+    <!-- Full Name -->
+    <div class="form-field">
+      <span class="field-icon">👤</span>
+      <div class="field-content">
+        <input
+          type="text"
+          formControlName="passengerName"
+          placeholder="Full Name"
+          [class.invalid]="hasError('passengerName', 'required')" />
+      </div>
+    </div>
+
+    <!-- ID Type (Train Only) -->
+    <ng-container *ngIf="isTrain">
+      <div class="form-field">
+        <span class="field-icon">🪪</span>
+        <div class="field-content">
+          <span class="field-label">ID Type</span>
+          <select class="select-input" formControlName="idType">
+            <option value="NationalId">National ID</option>
+            <option value="Passport">Passport</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ID Number (Train Only) -->
+      <div class="form-field">
+        <span class="field-icon">📋</span>
+        <div class="field-content">
+          <span class="field-label">{{ getIdNumberLabel() }}</span>
+          <input
+            type="text"
+            formControlName="idNumber"
+            [placeholder]="getIdNumberPlaceholder()"
+            [attr.inputmode]="getIdNumberInputMode()"
+            [attr.maxlength]="getIdNumberMaxLength()"
+            [class.invalid]="hasError('idNumber', 'required') || hasError('idNumber', 'pattern')" />
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Phone Number -->
+    <div class="form-field phone-field" *ngIf="requirePhone">
+      <span class="field-icon">📞</span>
+      <div class="phone-input">
+        <select class="select-input" formControlName="phoneCode">
+          <option *ngFor="let code of phoneCodes" [value]="code.dialCode">
+            {{ code.countryName }} ({{ code.dialCode }})
+          </option>
+        </select>
+        <input
+          type="tel"
+          formControlName="phoneLocalNumber"
+          placeholder="Phone Number"
+          inputmode="numeric"
+          [pattern]="phoneLocalPattern()"
+          [attr.minlength]="phoneLocalMinLength()"
+          [attr.maxlength]="phoneLocalMaxLength()"
+          [class.invalid]="hasError('phoneLocalNumber', 'required') || hasError('phoneLocalNumber', 'pattern')" />
+      </div>
+    </div>
+
+    <!-- Email Address -->
+    <div class="form-field" *ngIf="showEmail">
+      <span class="field-icon">✉️</span>
+      <div class="field-content">
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="Email Address (Optional)"
+          [class.invalid]="hasError('email', 'email')" />
+      </div>
+    </div>
+  </div>
+</div>

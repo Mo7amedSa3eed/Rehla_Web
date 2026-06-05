@@ -6,65 +6,81 @@
     <h1>Passenger Details</h1>
   </div>
 
-  <div *ngIf="selectedTrip" class="passenger-form-section">
-    <div class="passenger-header">
-      <h2 class="passenger-title">Passenger 1</h2>
+  <ng-container *ngIf="selectedTrip && form">
+    <form [formGroup]="form">
+      <div formArrayName="passengers">
+        <div *ngFor="let control of passengersArray.controls; let i = index">
+          
+          <app-passenger-card
+            [group]="$any(control)"
+            [index]="i"
+            [isTrain]="isTrain"
+            [showEmail]="true"
+            [requirePhone]="true"
+            [phoneCodes]="phoneCodes">
+          </app-passenger-card>
+
+          <!-- Autofill Banner immediately after first passenger if bus and multi-pax -->
+          <app-passenger-autofill-banner
+            *ngIf="i === 0 && showAutofillBanner"
+            [isAutofilled]="isAutofilled"
+            [errorMessage]="autofillError"
+            (triggerAutofill)="handleAutofill()">
+          </app-passenger-autofill-banner>
+
+        </div>
+      </div>
+    </form>
+  </ng-container>
+
+  <div class="loyalty-section">
+    <div class="loyalty-header">
+      <span class="loyalty-icon">💎</span>
+      <h3>Use Loyalty Points</h3>
     </div>
+    <input
+      class="loyalty-slider"
+      type="range"
+      [min]="0"
+      [max]="maxRedeemablePoints"
+      [step]="pointsPerEgp"
+      [value]="pointsToRedeem"
+      (input)="onPointsChange($event)" />
 
-    <div class="form-fields">
-      <div class="form-field">
-        <span class="field-icon">👤</span>
-        <input
-          type="text"
-          placeholder="Full Name"
-          [(ngModel)]="fullName"
-          required />
+    <div class="loyalty-card">
+      <div class="loyalty-row">
+        <span>Points used</span>
+        <span>{{ pointsToRedeem }} pts</span>
       </div>
-
-      <div class="form-field" [ngClass]="{ 'invalid-field': isNationalIdInvalid() }">
-        <span class="field-icon">📋</span>
-        <input
-          type="text"
-          placeholder="National ID"
-          [(ngModel)]="nationalId"
-          inputmode="numeric"
-          maxlength="14"
-          required />
+      <div class="loyalty-row">
+        <span>Discount</span>
+        <span class="discount">- {{ discountValue | number:'1.2-2' }} EGP</span>
       </div>
-
-      <div class="form-field" [ngClass]="{ 'invalid-field': isPhoneNumberInvalid() }">
-        <span class="field-icon">📞</span>
-        <input
-          type="tel"
-          placeholder="Phone Number"
-          [(ngModel)]="phoneNumber"
-          inputmode="numeric"
-          maxlength="11"
-          required />
+      <div class="loyalty-row">
+        <span>Remaining after</span>
+        <span class="remaining">{{ pointsBalance - pointsToRedeem }} pts</span>
       </div>
-
-      <div class="form-field">
-        <span class="field-icon">✉️</span>
-        <input
-          type="email"
-          placeholder="Email Address (Optional)"
-          [(ngModel)]="email" />
+      <div class="divider"></div>
+      <div class="loyalty-row total">
+        <span>Final total</span>
+        <span>{{ finalTotal | number:'1.2-2' }} EGP</span>
       </div>
     </div>
+    <div class="loyalty-hint">{{ pointsPerEgp }} pts = 1.00 EGP</div>
   </div>
 
   <div class="action-buttons">
     <button
       class="btn add-to-cart-btn"
       type="button"
-      [disabled]="!isFormValid() || isProcessing"
+      [disabled]="form.invalid || isProcessing"
       (click)="addToCart()">
       {{ isProcessing ? 'Processing...' : 'Add to Cart' }}
     </button>
     <button
       class="btn book-now-btn"
       type="button"
-      [disabled]="!isFormValid() || isProcessing"
+      [disabled]="form.invalid || isProcessing"
       (click)="bookNow()">
       {{ isProcessing ? 'Processing...' : 'Book Now' }}
     </button>

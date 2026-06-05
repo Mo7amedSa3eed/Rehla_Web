@@ -1,174 +1,449 @@
-<div class="tickets-page">
+<div class="container tickets-page">
 
-  <h2>My Tickets</h2>
-
-  <div *ngIf="isLoading" class="no-results">
-    <p>Loading tickets...</p>
+  <div class="header-row">
+    <div class="title-group">
+      <h2 class="title">My Tickets</h2>
+    </div>
+    <button class="refresh-btn" (click)="refreshTickets()" [class.spinning]="isLoading" title="Refresh Tickets">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.44l5.08 5.08" />
+      </svg>
+      Refresh
+    </button>
   </div>
 
-  <div *ngIf="!isLoading && loadError" class="no-results">
-    <p>{{ loadError }}</p>
-    <span>Please refresh and try again.</span>
-  </div>
-
-
-  <div class="tabs">
-    <button
-      class="btn"
-      [class.active]="view === 'resell'"
-      (click)="view = 'resell'">
-      ✏️ Resell Tickets
+  <div class="main-tabs">
+    <button class="main-tab-btn" [class.active]="view === 'tickets'" (click)="view = 'tickets'">
+      🎟️ My Tickets
     </button>
 
-    <button
-      class="btn"
-      [class.active]="view === 'marketplace'"
-      (click)="view = 'marketplace'">
+    <button class="main-tab-btn" [class.active]="view === 'marketplace'" (click)="view = 'marketplace'">
       🏪 Ticket Marketplace
     </button>
   </div>
 
+  <div *ngIf="!isLoading && loadError" class="no-results error-msg">
+    <p>{{ loadError }}</p>
+    <span>Please refresh and try again.</span>
+  </div>
 
-  <div *ngIf="!isLoading && !loadError && view === 'resell'">
+  <!-- Tickets View -->
+  <div *ngIf="view === 'tickets'" class="tickets-view">
 
-    <div *ngIf="resellTickets.length === 0" class="no-results">
-    <p>No tickets to display.</p>
-    <span>Use My Bookings page to buy a Tickets.</span>
+    <div class="sub-tabs">
+      <button class="sub-tab-btn" [class.active]="ticketTab === 'upcoming'" (click)="ticketTab = 'upcoming'">
+        Upcoming
+      </button>
+      <button class="sub-tab-btn" [class.active]="ticketTab === 'active'" (click)="ticketTab = 'active'">
+        Active
+      </button>
+      <button class="sub-tab-btn" [class.active]="ticketTab === 'past'" (click)="ticketTab = 'past'">
+        Past
+      </button>
     </div>
 
-    <div
-      class="ticket-card card"
-      *ngFor="let ticket of resellTickets">
+    <!-- Loading Skeleton -->
+    <div *ngIf="isLoading" class="ticket-list">
+      <div class="ticket-card skeleton-card" *ngFor="let i of [1,2]">
+        <div class="skeleton-line skeleton-header"></div>
+        <div class="skeleton-line skeleton-body"></div>
+        <div class="skeleton-line skeleton-footer"></div>
+      </div>
+    </div>
 
-      <h3>{{ticket.from}} → {{ticket.to}}</h3>
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && !loadError && myTicketsList.length === 0" class="no-results">
+      <p>No {{ticketTab}} tickets to display.</p>
+      <span>Use the booking page to find and purchase new tickets.</span>
+    </div>
 
-      <div class="ticket-grid">
+    <!-- Ticket Cards -->
+    <div class="ticket-list" *ngIf="!isLoading && myTicketsList.length > 0">
+      <div class="ticket-card" *ngFor="let ticket of myTicketsList" [class.expanded]="isExpanded(ticket.id)">
 
-        <div>
-          <p class="label">📅 Date</p>
-          <p>{{ticket.date}}</p>
+        <div class="card-clickable-area" (click)="toggleDetails(ticket.id)">
+          <!-- Card Header: Class name + Status -->
+          <div class="card-top-row">
+            <div class="class-name">
+              <span class="class-icon">🚆</span> {{ticket.agencyName ? ticket.agencyName + ' - ' + ticket.className : ticket.className || 'Train'}}
+            </div>
+            <div class="status-badge" [ngClass]="getStatusClass(ticket)">
+              <span>{{ getStatusLabel(ticket) }}</span>
+            </div>
+          </div>
+
+          <!-- Countdown -->
+          <div class="countdown-badge" *ngIf="ticketTab === 'active' && getCountdown(ticket.id)">
+            <span class="icon">⏱️</span> {{ getCountdown(ticket.id) }}
+          </div>
+
+          <!-- Route Section: From → To -->
+          <div class="route-section">
+            <div class="route-point">
+              <span class="route-label">From</span>
+              <span class="city-name">{{ticket.from}}</span>
+              <span class="pin-icon">📍</span>
+              <span class="route-datetime">{{ticket.date}}  {{ticket.time}}</span>
+            </div>
+
+            <div class="travel-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12h14M14 6l5 6-5 6" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 12H5M10 18l-5-6 5-6" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+
+            <div class="route-point align-right">
+              <span class="route-label">To</span>
+              <span class="city-name">{{ticket.to}}</span>
+              <span class="pin-icon">📍</span>
+              <span class="route-datetime" *ngIf="ticket.arrivalDate">{{ticket.arrivalDate}}  {{ticket.arrivalTime}}</span>
+              <span class="route-datetime" *ngIf="!ticket.arrivalDate">{{ticket.duration}} duration</span>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Seats, Pax, Price -->
+          <div class="card-bottom-row">
+            <div class="meta-badges">
+              <span class="meta-badge">👥 {{ticket.passengers}} pax</span>
+            </div>
+            <div class="ticket-price">{{ticket.price}} EGP</div>
+            <div class="expand-indicator">
+              <svg *ngIf="!isExpanded(ticket.id)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              <svg *ngIf="isExpanded(ticket.id)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <p class="label">⏰ Time</p>
-          <p>{{ticket.time}}</p>
-        </div>
+        <!-- Expanded Details Area -->
+        <div class="ticket-details-area" *ngIf="isExpanded(ticket.id)">
+          <div class="dashed-separator"></div>
 
-        <div>
-          <p class="label">🚆 Transport</p>
-          <p>Train</p>
-        </div>
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="label">Booking Reference</span>
+              <span class="value">REF-{{ticket.id}}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Payment Status</span>
+              <span class="value">{{ticket.paymentStatus || 'Unknown'}}</span>
+            </div>
+            <div class="detail-item" *ngIf="ticket.bookingDate">
+              <span class="label">Booked On</span>
+              <span class="value">{{ ticket.bookingDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="ticket.isMarketplacePurchase">
+              <span class="label">Purchase Type</span>
+              <span class="value marketplace-type">🏪 Marketplace</span>
+            </div>
+          </div>
 
-        <div>
-          <p class="label">👤 Passengers</p>
-          <p>{{ticket.passengers}} Passenger(s)</p>
-        </div>
+          <!-- Passenger List -->
+          <div class="passengers-section">
+            <h4 class="section-title">Passengers</h4>
+            <div class="passenger-list" *ngIf="ticket.passengerList?.length">
+              <div class="passenger-row" *ngFor="let p of ticket.passengerList" (click)="openBoardingPass(ticket, p)">
+                <div class="pax-info">
+                  <span class="pax-icon">👤</span>
+                  <div class="pax-text">
+                    <span class="pax-name">{{ p.name }}</span>
+                    <span class="pax-id">ID: {{ p.idNumber }}</span>
+                  </div>
+                </div>
+                <div class="pax-seat">
+                  <span class="seat-badge">💺 {{ p.seatNumber }}</span>
+                </div>
+                <div class="pax-action">
+                  <span>QR ➡️</span>
+                </div>
+              </div>
+            </div>
+            <div class="no-passengers" *ngIf="!ticket.passengerList?.length">
+              <p>No passenger details available.</p>
+            </div>
+          </div>
 
-        <div>
-          <p class="label">🎟 Ticket ID</p>
-          <p>TCK-{{ticket.ticketId}}</p>
-        </div>
+          <!-- Ticket Actions -->
+          <div class="ticket-actions">
+            <button class="action-btn refund-btn"
+                    *ngIf="canShowRefund(ticket)"
+                    [disabled]="isRefundDisabled(ticket)"
+                    (click)="openRefundDialog(ticket)">
+              {{ getRefundButtonLabel(ticket) }}
+            </button>
 
-        <div>
-          <p class="label">💺 Seat</p>
-          <p>{{ticket.seat}}</p>
+            <button class="action-btn resell-btn"
+                    *ngIf="canResellTicket(ticket)"
+                    (click)="resellTicket(ticket)">
+              Sell Ticket
+            </button>
+
+            <button class="action-btn cancel-listing-btn"
+                    *ngIf="canCancelListing(ticket)"
+                    [disabled]="isCancellingListing"
+                    (click)="cancelListing(ticket)">
+              {{ isCancellingListing ? 'Cancelling...' : 'Cancel Resale Listing' }}
+            </button>
+          </div>
         </div>
 
       </div>
-      
-      <div class="price-section">
-
-        <p class="old-price">
-          Original: ${{ticket.originalPrice || ticket.price}}
-        </p>
-
-        <p class="new-price">
-          Resell Price (10% off): ${{(ticket.price * 0.9) | number:'1.2-2'}}
-        </p>
-
-      </div>
-
-      <button
-        class="resell-btn btn"
-        (click)="resellTicket(ticket)">
-        Resell Ticket
-      </button>
-
     </div>
 
   </div>
 
 
-  <div *ngIf="!isLoading && !loadError && view === 'marketplace'">
+  <!-- Marketplace View -->
+  <div *ngIf="view === 'marketplace'" class="marketplace-view">
 
-    <div *ngIf="marketplaceTickets.length === 0" class="no-results">
-    <p>No tickets to display.</p>
+    <div class="filters-btn-container">
+      <button class="filters-btn" (click)="openMarketplaceFilter()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Filters
+      </button>
     </div>
 
-    <div
-      class="ticket-card marketplace card"
-      *ngFor="let ticket of marketplaceTickets">
+    <!-- Loading Skeleton -->
+    <div *ngIf="isLoading" class="marketplace-stats-grid">
+       <div class="stat-card skeleton-card"></div>
+       <div class="stat-card skeleton-card"></div>
+    </div>
+    <div *ngIf="isLoading" class="ticket-list mp-list">
+       <div class="marketplace-card skeleton-card" *ngFor="let i of [1,2]">
+         <div class="skeleton-line skeleton-header"></div>
+         <div class="skeleton-line skeleton-body"></div>
+       </div>
+    </div>
 
-      <div class="sold-label">
-        Resold Ticket
+    <div class="marketplace-stats-grid" *ngIf="!isLoading && marketplaceTickets.length > 0">
+      <div class="stat-card">
+        <div class="stat-icon yellow">⚡</div>
+        <div class="stat-value">-{{averageDiscount | number:'1.0-0'}}%</div>
+        <div class="stat-label">Avg. Discount</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">👥</div>
+        <div class="stat-value">{{marketplaceTickets.length}}</div>
+        <div class="stat-label">Total Listings</div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && !loadError && marketplaceTickets.length === 0" class="no-results">
+      <p>No tickets available in the marketplace.</p>
+      <span>Check back later for new listings from other users.</span>
+    </div>
+
+    <!-- Marketplace Cards -->
+    <div class="ticket-list mp-list" *ngIf="!isLoading && marketplaceTickets.length > 0">
+      <div class="marketplace-card" *ngFor="let ticket of marketplaceTickets">
+
+        <!-- Header -->
+        <div class="mp-header">
+          <div class="mp-route-title">
+            <span class="transport-icon">🚆</span>
+            {{ticket.from}} <span class="arrow">→</span> {{ticket.to}}
+          </div>
+          <div class="mp-badge">For Sale</div>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="mp-datetime">
+          <div class="mp-dt-item">
+            <span class="icon">📅</span> {{ticket.date}}
+          </div>
+          <div class="mp-dt-item">
+            <span class="icon">⏰</span> {{ticket.time}}
+          </div>
+        </div>
+
+        <!-- Info Blocks -->
+        <div class="mp-info-blocks">
+          <div class="info-block">
+            <span class="info-label">Class / Agency</span>
+            <div class="info-val">
+              <span class="icon">💺</span>
+              <span class="val-text">{{ticket.className || ticket.agencyName || 'Standard'}}</span>
+            </div>
+          </div>
+          <div class="info-block">
+            <span class="info-label">Seller</span>
+            <div class="info-val">
+              <span class="icon">👤</span>
+              <span class="val-text seller-name">{{ticket.sellerName || 'Anonymous'}}</span>
+            </div>
+          </div>
+          <div class="info-block">
+            <span class="info-label">Seats</span>
+            <div class="info-val">
+              <span class="icon">👥</span>
+              <span class="val-text">{{ ticket.passengers }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Price Row -->
+        <div class="mp-bottom-row">
+          <div class="mp-price-info">
+            <div class="old-price" *ngIf="ticket.originalPrice > ticket.price">{{ticket.originalPrice}} EGP</div>
+            <div class="new-price-row">
+              <span class="new-price">{{ticket.price | number:'1.0-2'}} EGP</span>
+              <span class="discount-badge" *ngIf="ticket.originalPrice > ticket.price">
+                -{{ ((ticket.originalPrice - ticket.price) / ticket.originalPrice * 100) | number:'1.0-0' }}%
+              </span>
+            </div>
+          </div>
+          <button class="buy-now-btn" (click)="buyTicket(ticket)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17M9 21a2 2 0 100-4 2 2 0 000 4zm11 0a2 2 0 100-4 2 2 0 000 4z" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Buy Now
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Marketplace Filter Overlay -->
+  <div class="mp-filter-backdrop" [class.active]="isMarketplaceFilterOpen" (click)="closeMarketplaceFilter()"></div>
+  <div class="mp-filter-panel" [class.active]="isMarketplaceFilterOpen">
+    <div class="mp-filter-drag-handle"></div>
+
+    <div class="mp-filter-header">
+      <h2 class="mp-filter-title">Filter Listings</h2>
+      <button class="mp-filter-reset" (click)="resetMarketplaceFilters()">Reset All</button>
+    </div>
+
+    <div class="mp-filter-form">
+      <!-- Origin -->
+      <div class="mp-filter-group">
+        <label>Origin Governorate</label>
+        <div class="mp-input-wrapper">
+          <span class="icon">🏢</span>
+          <input type="text" [(ngModel)]="mpFilterOrigin" placeholder="e.g. Cairo">
+        </div>
       </div>
 
-      <h3>{{ticket.from}} → {{ticket.to}}</h3>
-
-      <div class="ticket-grid">
-
-        <div>
-          <p class="label">📅 Date</p>
-          <p>{{ticket.date}}</p>
+      <!-- Destination -->
+      <div class="mp-filter-group">
+        <label>Destination Governorate</label>
+        <div class="mp-input-wrapper">
+          <span class="icon">🏢</span>
+          <input type="text" [(ngModel)]="mpFilterDestination" placeholder="e.g. Alexandria">
         </div>
-
-        <div>
-          <p class="label">⏰ Time</p>
-          <p>{{ticket.time}}</p>
-        </div>
-
-        <div>
-          <p class="label">🚆 Transport</p>
-          <p>Train</p>
-        </div>
-
-        <div>
-          <p class="label">👤 Passengers</p>
-          <p>{{ticket.passengers}} Passenger(s)</p>
-        </div>
-
-        <div>
-          <p class="label">🎟 Ticket ID</p>
-          <p>TCK-{{ticket.ticketId}}</p>
-        </div>
-
-        <div>
-          <p class="label">💺 Seat</p>
-          <p>{{ticket.seat}}</p>
-        </div>
-
       </div>
 
-      <div class="price-section">
+      <!-- Date -->
+      <div class="mp-filter-group">
+        <label>Travel Date</label>
+        <div class="mp-input-wrapper">
+          <span class="icon">📅</span>
+          <input type="date" [(ngModel)]="mpFilterDate" placeholder="Any date">
+        </div>
+      </div>
+    </div>
 
-        <p class="old-price">
-          Original: ${{ticket.originalPrice}}
-        </p>
+    <button class="mp-filter-apply-btn" (click)="applyMarketplaceFilters()">
+      Apply Filters
+    </button>
+  </div>
 
-        <p class="new-price">
-          Now: ${{ticket.price | number:'1.2-2'}}
-        </p>
-
-        <button
-          class="buy-btn btn btn-primary"
-          (click)="buyTicket(ticket)">
-          Buy Ticket
+  <!-- Refund Dialog -->
+  <div class="dialog-backdrop" *ngIf="showRefundDialog">
+    <div class="dialog-panel">
+      <h3>Request Refund</h3>
+      <p>Are you sure you want to request a refund for this ticket? If approved, the amount will be credited to your wallet according to the refund policy.</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn secondary" (click)="closeRefundDialog()">Cancel</button>
+        <button class="dialog-btn primary" (click)="confirmRefund()" [disabled]="isRequestingRefund">
+          {{ isRequestingRefund ? 'Submitting...' : 'Confirm Request' }}
         </button>
+      </div>
+    </div>
+  </div>
 
+  <!-- Boarding Pass Modal -->
+  <div class="bp-modal-backdrop" *ngIf="showBoardingPass">
+    <div class="bp-modal-panel">
+      <div class="bp-header">
+        <h3>Boarding Pass</h3>
+        <button class="bp-close-btn" (click)="closeBoardingPass()">✕</button>
       </div>
 
-    </div>
+      <div class="bp-content" *ngIf="boardingPassTicket && boardingPassPassenger" #boardingPassEl>
+        <!-- Print wrapper -->
+        <div class="bp-ticket">
+          <div class="bp-top">
+            <div class="bp-agency">{{ boardingPassTicket.agencyName || 'Rihla Partner' }}</div>
+            <div class="bp-ref">REF-{{ boardingPassTicket.id }}-P{{ boardingPassPassenger.passengerId }}</div>
+          </div>
 
+          <div class="bp-route">
+            <div class="bp-loc">
+              <span class="bp-code">{{ locationCode(boardingPassTicket.from) }}</span>
+              <span class="bp-city">{{ boardingPassTicket.from }}</span>
+            </div>
+            <div class="bp-icon">✈️</div>
+            <div class="bp-loc text-right">
+              <span class="bp-code">{{ locationCode(boardingPassTicket.to) }}</span>
+              <span class="bp-city">{{ boardingPassTicket.to }}</span>
+            </div>
+          </div>
+
+          <div class="bp-info-grid">
+            <div class="bp-info-item">
+              <span class="lbl">Passenger</span>
+              <span class="val">{{ boardingPassPassenger.name }}</span>
+            </div>
+            <div class="bp-info-item text-right">
+              <span class="lbl">Seat</span>
+              <span class="val seat">{{ boardingPassPassenger.seatNumber }}</span>
+            </div>
+            <div class="bp-info-item">
+              <span class="lbl">Date</span>
+              <span class="val">{{ boardingPassTicket.date }}</span>
+            </div>
+            <div class="bp-info-item text-right">
+              <span class="lbl">Time</span>
+              <span class="val">{{ boardingPassTicket.time }}</span>
+            </div>
+            <div class="bp-info-item">
+              <span class="lbl">Class</span>
+              <span class="val">{{ boardingPassTicket.className }}</span>
+            </div>
+            <div class="bp-info-item text-right">
+              <span class="lbl">ID Number</span>
+              <span class="val">{{ boardingPassPassenger.idNumber }}</span>
+            </div>
+          </div>
+
+          <div class="bp-qr-section">
+            <div *ngIf="qrLoading" class="qr-loading">Loading QR...</div>
+            <div *ngIf="qrError" class="qr-error">{{ qrError }}</div>
+            <div *ngIf="!qrLoading && qrPayload" class="qr-code-wrapper">
+              <qrcode [qrdata]="qrPayload" [width]="180" [errorCorrectionLevel]="'M'"></qrcode>
+            </div>
+            <div class="bp-generated-time">Generated: {{ undefined | date:'medium' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bp-actions">
+        <button class="bp-btn outline" (click)="printBoardingPass()" [disabled]="qrLoading || qrError">
+          🖨️ Print
+        </button>
+        <button class="bp-btn primary" (click)="downloadBoardingPass()" [disabled]="qrLoading || qrError">
+          📥 Download PDF
+        </button>
+      </div>
+    </div>
   </div>
 
 </div>

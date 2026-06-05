@@ -1,74 +1,92 @@
-<div class="welcome-page">
-  <section class="welcome-hero card">
+<div class="welcome-container">
+  <div class="animated-background">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <section class="hero-section">
     <div class="hero-content">
-      <div class="welcome-badge">Welcome</div>
-      <h1>Rihla makes every journey feel effortless.</h1>
-      <p>
-        Discover routes, compare options, and book with confidence. Keep tickets, payments, and
-        trip history together in one streamlined place.
+      <div class="badge-glass">
+        <span class="pulse-dot"></span> Next-Gen Travel Experience
+      </div>
+      <h1 class="hero-title">
+        The world is yours.<br>
+        <span class="text-gradient">Book it in seconds.</span>
+      </h1>
+      <p class="hero-subtitle">
+        Say goodbye to stressful planning. Rihla intelligently unifies your bookings, wallets, and resale tickets in one ultra-fast, premium platform.
       </p>
 
       <div class="hero-actions">
-        <a class="btn btn-primary btn-hero" routerLink="/signup">Start planning</a>
-        <a class="btn btn-outline btn-hero" routerLink="/login">Log in</a>
-      </div>
-
-      <div class="hero-meta">
-        <div class="meta-item">
-          <span class="meta-label">Live schedules</span>
-          <span class="meta-value">Updated every 5 min</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Secure checkout</span>
-          <span class="meta-value">Protected wallet</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Smart resale</span>
-          <span class="meta-value">List tickets fast</span>
-        </div>
+        <a class="btn-glow" routerLink="/signup">
+          <span>Start your journey</span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="btn-glass" routerLink="/login">Sign in</a>
       </div>
     </div>
 
-    <div class="hero-visual" aria-hidden="true">
-      <div class="hero-ring"></div>
-      <div class="hero-card">
-        <div class="hero-card-title">Popular route</div>
-        <div class="hero-card-row">
-          <span>Alexandria</span>
-          <span class="hero-card-pill">2h 30m</span>
+    <div class="hero-visual">
+      <div class="floating-card primary-card">
+        <div class="card-header">
+          <span class="route-tag">Trending</span>
+          <div class="price-tag">120 EGP</div>
         </div>
-        <div class="hero-card-row">
-          <span>Cairo</span>
-          <span class="hero-card-pill">From 120 EGP</span>
+        <div class="route-info">
+          <div class="city">Alexandria</div>
+          <div class="route-divider">
+            <span class="line"></span>
+            <span class="icon-train">🚆</span>
+            <span class="line"></span>
+          </div>
+          <div class="city">Cairo</div>
+        </div>
+        <div class="card-footer">
+          <div class="time">Just 2h 30m away</div>
+          <button class="btn-book-mini">Book Now</button>
         </div>
       </div>
-      <div class="hero-card hero-card-alt">
-        <div class="hero-card-title">Ticket wallet</div>
-        <div class="hero-card-row">
-          <span>Next trip</span>
-          <span class="hero-card-pill">Today 6:30 PM</span>
+
+      <div class="floating-card secondary-card">
+        <div class="card-header">
+          <div class="wallet-icon">💳</div>
+          <span class="wallet-balance">850 EGP</span>
+        </div>
+        <div class="card-body">
+          <div class="text-sm">Secure Wallet</div>
+          <div class="text-xs">Instant 1-click checkout</div>
+        </div>
+      </div>
+      
+      <div class="floating-card tertiary-card">
+         <div class="card-header">
+          <div class="ticket-icon">🎫</div>
+          <span class="status-tag">Listed</span>
+        </div>
+        <div class="card-body">
+          <div class="text-sm">Smart Resale</div>
+          <div class="text-xs">Sold in 12 mins</div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="welcome-grid">
-    <div class="info-panel">
-      <h2>Plan in minutes</h2>
-      <ul>
-        <li>Search popular routes and schedules.</li>
-        <li>Compare prices, seats, and timings.</li>
-        <li>Book securely with instant confirmation.</li>
-      </ul>
+  <section class="features-section">
+    <div class="feature-card">
+      <div class="feature-icon glow-blue">⚡</div>
+      <h3>Lightning Fast</h3>
+      <p>Live schedules updated in real-time. Never miss a train again.</p>
     </div>
-
-    <div class="info-panel">
-      <h2>Manage your journey</h2>
-      <ul>
-        <li>Track bookings and ticket history.</li>
-        <li>Keep your wallet and payments organized.</li>
-        <li>Access marketplace listings and resale flows.</li>
-      </ul>
+    <div class="feature-card">
+      <div class="feature-icon glow-cyan">🔒</div>
+      <h3>Ultra Secure</h3>
+      <p>Bank-grade encryption for your wallet and instant checkouts.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon glow-purple">🔄</div>
+      <h3>Smart Resale</h3>
+      <p>Plans changed? Flip your ticket on the marketplace instantly.</p>
     </div>
   </section>
 </div>

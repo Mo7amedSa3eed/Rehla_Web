@@ -23,7 +23,7 @@ export class ResellComponent implements OnInit {
     public state: AppStateService,
     private router: Router,
     @Inject(PLATFORM_ID) private readonly platformId: object,
-  ) {}
+  ) { }
 
   async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) {
@@ -40,7 +40,7 @@ export class ResellComponent implements OnInit {
       return;
     }
 
-    this.askingPrice = Number((this.ticket.price * 0.9).toFixed(2));
+    this.askingPrice = this.ticket.price;
     this.isLoading = false;
   }
 
@@ -71,7 +71,7 @@ export class ResellComponent implements OnInit {
         this.state.loadMarketplace().catch(() => undefined),
         this.state.loadBookings().catch(() => undefined),
       ]);
-      await this.router.navigate(['/marketplace']);
+      await this.router.navigate(['/my-tickets']);
     } catch (error) {
       this.loadError = error instanceof Error ? error.message : 'Failed to list ticket for resale';
     } finally {
