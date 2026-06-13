@@ -68,6 +68,7 @@ export interface UiTrip {
   seats: number;
   availableClasses: TripClassDto[];
   routeStops: RouteStopDto[];
+  showStops?: boolean;
 }
 
 export interface UiBooking {
@@ -203,6 +204,8 @@ export class AppStateService {
   marketplace: MarketplaceListing[] = [];
   localPendingBookings: UiBooking[] = [];
   localConfirmedBookings: UiBooking[] = [];
+  walletHistory: any[] = [];
+  activeCart: ActiveCartDto | null = null;
 
   currentPaymentBooking: UiBooking | null = null;
   buyingMarketplaceTicketId: number | null = null;
@@ -211,6 +214,12 @@ export class AppStateService {
   pendingPassengers: PassengerDraft[] = [];
 
   isMarketplaceLoaded = false;
+
+  searchType: 'oneway' | 'indirect' | 'round' | 'multi-destination' = 'oneway';
+  searchQueries: any[] = [];
+  currentLegIndex: number = 0;
+  selectedLegs: any[] = [];
+  indirectSearchResults: any[] = [];
 
   async searchTrips(criteria: {
     travelDate: string;
@@ -259,6 +268,104 @@ export class AppStateService {
 
     this.searchPassengers = criteria.passengers;
     this.searchResults = result.items.map((trip) => this.mapTripToUi(trip));
+  }
+
+  async searchIndirectTrips(criteria: any): Promise<void> {
+    if (!this.isBrowser()) {
+      return;
+    }
+
+    this.lastSearchTransport = typeof criteria.transport === 'number' ? criteria.transport : null;
+
+    const result = await firstValueFrom(
+      this.api.searchIndirectTrips({
+        travelDate: criteria.travelDate,
+        fromGovernorate: criteria.fromGovernorate,
+        fromStationId: criteria.fromStationId,
+        toGovernorate: criteria.toGovernorate,
+        toStationId: criteria.toStationId,
+        passengers: criteria.passengers,
+        transport: criteria.transport,
+        preferredAgencies: criteria.preferredAgencies,
+      })
+    );
+
+    this.searchPassengers = criteria.passengers;
+    this.indirectSearchResults = result.items;
+  }
+
+  async addLegsToCart(): Promise<void> {
+    if (!this.isBrowser() || this.selectedLegs.length === 0) {
+      return;
+    }
+
+    // Clean up any abandoned items in the cart before adding new ones
+    try {
+      const currentCart = await this.loadCartSafe();
+      if (currentCart && currentCart.items && currentCart.items.length > 0) {
+        await Promise.all(currentCart.items.map(item =>
+          firstValueFrom(this.api.cancelCartHold(item.bookingId)).catch(() => {})
+        ));
+      }
+    } catch (e) {
+      console.warn('Failed to clean up old cart items', e);
+    }
+
+    const draftPassengers =
+      this.pendingPassengers.length === this.searchPassengers
+        ? this.pendingPassengers
+        : [];
+
+    const primaryPassenger = draftPassengers[0];
+    const contactName =
+      primaryPassenger?.fullName?.trim() ||
+      `${this.userProfile.firstName} ${this.userProfile.lastName}`.trim() ||
+      'Rihla Guest';
+    const contactPhone = primaryPassenger
+      ? buildE164Number(primaryPassenger.phoneCode, primaryPassenger.phoneLocalNumber)
+      : this.userProfile.phone || '+201000000000';
+    const contactEmail = primaryPassenger?.email?.trim() || this.userProfile.email || 'guest@example.com';
+
+    for (const leg of this.selectedLegs) {
+      try {
+        const isTrain = this.isTrainTrip(leg.agencyName, leg.transport);
+
+        await firstValueFrom(
+          this.api.addToCart({
+            tripOccurrenceId: leg.tripOccurrenceId,
+            coachClassId: leg.coachClassId,
+            originStationId: leg.originStationId,
+            destinationStationId: leg.destinationStationId,
+            contactName,
+            contactPhone,
+            contactEmail,
+            passengers: draftPassengers.map((passenger, index) => {
+              const payload: any = {
+                passengerName: passenger?.fullName?.trim() || `Passenger ${index + 1}`,
+                seatNumber: isTrain ? `T-${index + 1}` : (leg.selectedSeats?.[index] || ''),
+              };
+              if (isTrain) {
+                payload.idType = passenger?.idType || 'NationalId';
+                payload.idNumber = passenger?.nationalId?.trim() || 'N/A';
+              }
+              return payload;
+            }),
+          }),
+        );
+      } catch {
+        // Fallback for local bookings handled separately if needed
+        console.error('Failed to add leg to cart', leg);
+      }
+    }
+
+    this.selectedLegs = [];
+    this.selectedSeats = [];
+    this.pendingPassengers = [];
+    this.currentLegIndex = 0;
+    this.searchQueries = [];
+    this.searchType = 'oneway';
+
+    await this.loadBookings();
   }
 
   async addTripToCart(trip: UiTrip): Promise<void> {
@@ -350,12 +457,15 @@ export class AppStateService {
     }
 
     const [cart, tickets] = await Promise.all([this.loadCartSafe(), this.loadTicketsSafe()]);
+    this.activeCart = cart;
     const pending = (cart?.items ?? []).map((item) => this.mapCartItemToUiBooking(item));
+    const offlinePending = this.localPendingBookings.filter(b => b.id < 0);
+    this.localPendingBookings = [...pending, ...offlinePending];
+
     const confirmed = tickets.map((ticket) => this.mapTicketToUiBooking(ticket));
     this.bookings = this.mergeBookings([
-      ...pending,
-      ...confirmed,
       ...this.localPendingBookings,
+      ...confirmed,
       ...this.localConfirmedBookings,
     ]);
   }
@@ -371,6 +481,8 @@ export class AppStateService {
       await firstValueFrom(this.api.checkoutWallet());
       if (typeof targetBookingId === 'number') {
         this.markBookingConfirmed(targetBookingId);
+      } else {
+        this.confirmCartItems();
       }
       await this.loadBookings();
       await this.loadTickets();
@@ -381,6 +493,8 @@ export class AppStateService {
     } catch {
       if (typeof targetBookingId === 'number') {
         this.confirmLocalBooking(targetBookingId);
+      } else {
+        this.confirmCartItems();
       }
       await this.loadBookings();
       await this.loadTickets();
@@ -401,6 +515,8 @@ export class AppStateService {
       await firstValueFrom(this.api.checkoutPoints(pointsToRedeem));
       if (typeof targetBookingId === 'number') {
         this.markBookingConfirmed(targetBookingId);
+      } else {
+        this.confirmCartItems();
       }
       await this.loadBookings();
       await this.loadTickets();
@@ -408,6 +524,8 @@ export class AppStateService {
     } catch {
       if (typeof targetBookingId === 'number') {
         this.confirmLocalBooking(targetBookingId);
+      } else {
+        this.confirmCartItems();
       }
       await this.loadBookings();
       await this.loadTickets();
@@ -647,6 +765,23 @@ export class AppStateService {
     return firstValueFrom(this.api.getMyTickets()).catch(() => []);
   }
 
+  private extractLocation(obj1: any, obj2: any, prefix: 'origin' | 'destination'): string {
+    const keys = [
+      `${prefix}GovEn`, `${prefix}GovernorateEn`, `${prefix}Gov`, `${prefix}Governorate`,
+      `${prefix}StationNameEn`, `${prefix}StationEn`, `${prefix}StationName`, `${prefix}Station`,
+      `${prefix}Name`, `${prefix}`
+    ];
+    for (const obj of [obj1, obj2]) {
+      if (!obj) continue;
+      for (const k of keys) {
+        if (obj[k] && typeof obj[k] === 'string' && obj[k].trim() !== '') {
+          return obj[k].trim();
+        }
+      }
+    }
+    return 'Unknown';
+  }
+
   private mapTripToUi(trip: TripSearchItemDto): UiTrip {
     const firstClass = trip.availableClasses[0];
     const boardingDate = new Date(trip.boardingTime);
@@ -664,8 +799,8 @@ export class AppStateService {
       originStationName: trip.originStationName,
       destinationStationId: trip.destinationStationId,
       destinationStationName: trip.destinationStationName,
-      from: trip.originGovernorate,
-      to: trip.destinationGovernorate,
+      from: this.extractLocation(trip, null, 'origin'),
+      to: this.extractLocation(trip, null, 'destination'),
       date: boardingDate.toLocaleDateString('en-US', {
         month: 'short',
         day: '2-digit',
@@ -704,8 +839,8 @@ export class AppStateService {
     return {
       id: item.bookingId,
       ticketId: item.bookingId,
-      from: item.origin,
-      to: item.destination,
+      from: this.extractLocation(item, null, 'origin'),
+      to: this.extractLocation(item, null, 'destination'),
       date: boardingDate.toLocaleDateString('en-US', {
         month: 'short',
         day: '2-digit',
@@ -767,8 +902,8 @@ export class AppStateService {
       id: ticket.bookingId,
       ticketId: ticket.bookingId,
       ownerId: ticket.ownerId,
-      from: (ticket as any).originGovEn || (ticket as any).originStationNameEn || ticket.originGov || ticket.originStation || 'Unknown',
-      to: (ticket as any).destinationGovEn || (ticket as any).destinationStationNameEn || ticket.destinationGov || ticket.destinationStation || 'Unknown',
+      from: this.extractLocation(ticket, null, 'origin'),
+      to: this.extractLocation(ticket, null, 'destination'),
       date: boardingDate.toLocaleDateString('en-US', {
         month: 'short',
         day: '2-digit',
@@ -891,6 +1026,12 @@ export class AppStateService {
     );
   }
 
+  private confirmCartItems(): void {
+    const confirmedCartBookings = this.localPendingBookings.map(b => ({ ...b, status: 'confirmed' as const }));
+    this.localConfirmedBookings = this.mergeBookings([...confirmedCartBookings, ...this.localConfirmedBookings]);
+    this.localPendingBookings = [];
+  }
+
   private mergeBookings(bookings: UiBooking[]): UiBooking[] {
     const unique = new Map<number, UiBooking>();
     for (const booking of bookings) {
@@ -956,8 +1097,8 @@ export class AppStateService {
         ticketId: listing.listingId,
         ownerId: listing.ownerId,
         sellerId: listing.sellerId ?? listing.ownerId,
-        from: listing.tripDetails.originGov || listing.tripDetails.origin,
-        to: listing.tripDetails.destinationGov || listing.tripDetails.destination,
+        from: this.extractLocation(listing.tripDetails, listing, 'origin'),
+        to: this.extractLocation(listing.tripDetails, listing, 'destination'),
         date: dateLabel,
         time: timeLabel,
         duration: '',
@@ -1001,9 +1142,15 @@ export class AppStateService {
     return isPlatformBrowser(this.platformId);
   }
 
-  public isTrainTrip(agencyName = '', transportType = ''): boolean {
-    const agency = agencyName.toUpperCase();
-    const type = transportType.toUpperCase();
+  public isTrainTrip(agencyName: any = '', transportType: any = ''): boolean {
+    if (transportType === 2 || String(transportType) === '2') {
+      return true;
+    }
+    if (transportType === 1 || String(transportType) === '1') {
+      return false;
+    }
+    const agency = String(agencyName || '').toUpperCase();
+    const type = String(transportType || '').toUpperCase();
     return type === 'TRAIN'
       || agency === 'EGYPTIAN NATIONAL RAILWAYS'
       || agency.includes('NATIONAL RAIL')

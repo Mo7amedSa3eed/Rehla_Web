@@ -23,7 +23,7 @@ import { PassengerAutofillBannerComponent } from '../../shared/components/passen
 })
 export class PassengerDetailsComponent implements OnInit {
   isProcessing = false;
-  selectedTrip: any = null;
+  selectedLegs: any[] = [];
   isTrain = false;
 
   form!: FormGroup;
@@ -43,13 +43,13 @@ export class PassengerDetailsComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.selectedTrip = this.state.selectedTicket;
-    if (!this.selectedTrip) {
+    this.selectedLegs = this.state.selectedLegs || [];
+    if (!this.selectedLegs || this.selectedLegs.length === 0) {
       await this.router.navigate(['/trips']);
       return;
     }
 
-    this.isTrain = this.state.isTrainTrip(this.selectedTrip.agencyName, this.selectedTrip.transportType);
+    this.isTrain = this.selectedLegs.some(leg => this.state.isTrainTrip(leg.agencyName || '', leg.transport || ''));
     
     this.form = this.fb.group({
       passengers: this.fb.array([])
@@ -87,8 +87,21 @@ export class PassengerDetailsComponent implements OnInit {
 
         // If user profile has phone, basic prefill
         if (this.state.userProfile.phone) {
-          // For a real app, you'd parse the dial code out of the full E164 string
-          pGroup.patchValue({ phoneLocalNumber: this.state.userProfile.phone.replace('+', '') });
+          let phone = this.state.userProfile.phone;
+          if (phone.startsWith('+20')) {
+            phone = phone.substring(3);
+          } else if (phone.startsWith('20') && phone.length >= 11) {
+            phone = phone.substring(2);
+          } else if (phone.startsWith('+')) {
+            phone = phone.substring(1);
+          }
+          
+          // Ensure Egyptian mobile numbers start with 0
+          if (phone.length === 10 && !phone.startsWith('0')) {
+            phone = '0' + phone;
+          }
+          
+          pGroup.patchValue({ phoneLocalNumber: phone });
         }
       }
 
@@ -156,7 +169,7 @@ export class PassengerDetailsComponent implements OnInit {
   }
 
   async addToCart(): Promise<void> {
-    if (this.form.invalid || !this.selectedTrip) {
+    if (this.form.invalid || this.selectedLegs.length === 0) {
       this.form.markAllAsTouched();
       return;
     }
@@ -165,10 +178,10 @@ export class PassengerDetailsComponent implements OnInit {
 
     try {
       this.syncPassengerDrafts();
-      await this.state.addTripToCart(this.selectedTrip);
+      await this.state.addLegsToCart();
       await this.router.navigate(['/my-tickets']);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to add trip to cart';
+      const message = error instanceof Error ? error.message : 'Failed to add trips to cart';
       alert(message);
     } finally {
       this.isProcessing = false;
@@ -176,7 +189,7 @@ export class PassengerDetailsComponent implements OnInit {
   }
 
   async bookNow(): Promise<void> {
-    if (this.form.invalid || !this.selectedTrip) {
+    if (this.form.invalid || this.selectedLegs.length === 0) {
       this.form.markAllAsTouched();
       return;
     }
@@ -185,15 +198,29 @@ export class PassengerDetailsComponent implements OnInit {
 
     try {
       this.syncPassengerDrafts();
-      await this.state.addTripToCart(this.selectedTrip);
+
+      // Build currentPaymentBooking from the selected legs BEFORE adding to cart
+      const firstLeg = this.selectedLegs[0];
+      const lastLeg = this.selectedLegs[this.selectedLegs.length - 1];
+      this.state.currentPaymentBooking = {
+        id: firstLeg.tripOccurrenceId ?? firstLeg.id,
+        ticketId: firstLeg.tripOccurrenceId ?? firstLeg.id,
+        from: firstLeg.from,
+        to: lastLeg.to,
+        date: firstLeg.date,
+        time: firstLeg.time,
+        duration: firstLeg.duration,
+        passengers: this.passengerCount,
+        price: this.finalTotal,
+        status: 'pending',
+        seat: '',
+        className: firstLeg.className,
+        agencyName: firstLeg.agencyName || firstLeg.transport,
+      };
+
+      await this.state.addLegsToCart();
       await this.state.loadBookings();
-      
-      const booking = this.state.bookings.find(b => b.status === 'pending');
-      if (booking) {
-        this.state.currentPaymentBooking = booking;
-        // Optionally pass pointsToRedeem to payment page via state if needed
-        await this.router.navigate(['/payment']);
-      }
+      await this.router.navigate(['/payment']);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to proceed with booking';
       alert(message);
@@ -203,7 +230,10 @@ export class PassengerDetailsComponent implements OnInit {
   }
 
   async goBack(): Promise<void> {
-    this.state.selectedTicket = null;
+    // Navigate back to trips or seat selection
+    this.state.selectedLegs = [];
+    this.state.currentLegIndex = 0;
+    this.state.selectedSeats = [];
     await this.router.navigate(['/trips']);
   }
 
@@ -212,7 +242,8 @@ export class PassengerDetailsComponent implements OnInit {
   }
 
   get totalPrice(): number {
-    return (this.selectedTrip?.price || 0) * this.passengerCount;
+    const totalLegsPrice = this.selectedLegs.reduce((sum, leg) => sum + (leg.price || 0), 0);
+    return totalLegsPrice * this.passengerCount;
   }
 
   get pointsBalance(): number {

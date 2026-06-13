@@ -126,12 +126,19 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
       return all.filter(t => this.isActiveNow(t, now) && !this.isRefundAccepted(t) && t.status !== 'sold');
     } else if (this.ticketTab === 'upcoming') {
       // Active takes priority - remove active tickets from upcoming
-      return all.filter(t =>
+      const upcoming = all.filter(t =>
         this.isUpcoming(t, now) &&
         !this.isActiveNow(t, now) &&
         !this.isRefundAccepted(t) &&
         t.status !== 'sold'
       );
+      
+      // Sort upcoming ascending by date and time
+      return upcoming.sort((a, b) => {
+        const timeA = a.boardingTimeRaw ? new Date(a.boardingTimeRaw).getTime() : 0;
+        const timeB = b.boardingTimeRaw ? new Date(b.boardingTimeRaw).getTime() : 0;
+        return timeA - timeB;
+      });
     } else {
       // past
       return all.filter(t => this.isPast(t, now) && !this.isRefundAccepted(t));
@@ -217,6 +224,15 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
       refundRequested: ticket.refundStatus === 'Requested',
       refundRejected: ticket.refundStatus === 'Rejected',
     };
+  }
+
+  getAgencyClass(agencyName: string | undefined): string {
+    if (!agencyName) return '';
+    const name = agencyName.toLowerCase();
+    if (name.includes('gobus') || name.includes('go bus')) return 'agency-orange';
+    if (name.includes('bluebus') || name.includes('blue bus')) return 'agency-purple';
+    if (name.includes('horus')) return 'agency-green';
+    return '';
   }
 
   // ─── Refund Logic ───

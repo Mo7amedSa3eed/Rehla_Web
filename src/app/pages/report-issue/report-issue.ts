@@ -66,9 +66,9 @@ export class ReportIssueComponent {
       };
       this.createdTicket = await firstValueFrom(this.api.createSupportTicket(payload));
       this.showSuccessModal = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '';
-      if (!msg || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('timeout')) {
+    } catch (e: any) {
+      const msg = e?.error?.message || e?.message || (typeof e === 'string' ? e : '');
+      if (!msg || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('unknown error')) {
         this.submitError = 'No internet connection. Please try again.';
       } else {
         this.submitError = msg || 'Failed to submit issue. Please try again.';

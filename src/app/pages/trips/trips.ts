@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppStateService } from '../../services/state';
 import { UiTrip } from '../../services/state';
+import { TripSearchItemDto } from '../../services/api';
 
 @Component({
   selector: 'app-trips',
@@ -12,9 +13,12 @@ import { UiTrip } from '../../services/state';
   templateUrl: './trips.html',
   styleUrls: ['./trips.scss']
 })
-export class TripsComponent {
+export class TripsComponent implements OnInit {
   isSubmitting = false;
   showFilters = false;
+
+  showIndirect = false;
+  isSearchingIndirect = false;
 
   // Filter state
   filterSortBy: 'departure' | 'price' | 'duration' = 'departure';
@@ -32,11 +36,33 @@ export class TripsComponent {
 
   constructor(public state: AppStateService, private router: Router) { }
 
+  ngOnInit() {
+    // Auto load indirect if direct is empty and we are a simple one-way search
+    if (this.state.searchQueries.length <= 1 && this.state.searchResults.length === 0) {
+      this.toggleIndirect();
+    }
+  }
+
   get filteredResults(): UiTrip[] {
     if (!this._appliedFilters) {
       return this.state.searchResults;
     }
     return this._filteredCache;
+  }
+
+  async toggleIndirect() {
+    this.showIndirect = !this.showIndirect;
+    if (this.showIndirect && this.state.indirectSearchResults.length === 0) {
+      const q = this.state.searchQueries[this.state.currentLegIndex] || {};
+      this.isSearchingIndirect = true;
+      try {
+        await this.state.searchIndirectTrips(q);
+      } catch (e) {
+        alert('Failed to load indirect trips');
+      } finally {
+        this.isSearchingIndirect = false;
+      }
+    }
   }
 
   applyFilters(): void {
@@ -47,12 +73,15 @@ export class TripsComponent {
       results = results.filter(trip => {
         const agencyLower = (trip.agencyName || '').toLowerCase();
         const transportLower = (trip.transport || '').toLowerCase();
+        
+        const isTrain = agencyLower.includes('train') || transportLower.includes('train') || 
+                        agencyLower.includes('railway') || transportLower.includes('railway');
+        
         if (this.filterTransport === 'bus') {
-          return agencyLower.includes('bus') || transportLower.includes('bus') ||
-            (!agencyLower.includes('train') && !transportLower.includes('train'));
+          return !isTrain;
         }
         if (this.filterTransport === 'train') {
-          return agencyLower.includes('train') || transportLower.includes('train');
+          return isTrain;
         }
         return true;
       });
@@ -120,40 +149,94 @@ export class TripsComponent {
     this._filteredCache = [];
   }
 
-  async selectTrip(trip: any): Promise<void> {
-    this.state.selectedTicket = trip;
-    // If the last search was for bus trips, show seat selection first
-    if (this.state.lastSearchTransport === 1) {
-      await this.router.navigate(['/seat-selection']);
+  mapDtoToUiTrip(dto: TripSearchItemDto): UiTrip {
+    // Helper to reuse mapping logic for indirect legs
+    const firstClass = dto.availableClasses[0];
+    return {
+      id: dto.tripOccurrenceId,
+      tripOccurrenceId: dto.tripOccurrenceId,
+      tripId: dto.tripId,
+      coachClassId: firstClass?.coachClassId ?? 0,
+      className: firstClass?.className ?? 'N/A',
+      originStationId: dto.originStationId,
+      originStationName: dto.originStationName,
+      destinationStationId: dto.destinationStationId,
+      destinationStationName: dto.destinationStationName,
+      from: dto.originGovernorate,
+      to: dto.destinationGovernorate,
+      date: new Date(dto.boardingTime).toLocaleDateString(),
+      time: new Date(dto.boardingTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      dropoffTime: new Date(dto.dropoffTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      departureTime: new Date(dto.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      arrivalTime: new Date(dto.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      duration: `${Math.floor(dto.totalDurationMinutes / 60)}h ${dto.totalDurationMinutes % 60}m`,
+      transport: dto.agencyName,
+      agencyName: dto.agencyName,
+      price: dto.startingPrice,
+      seats: firstClass?.remainingSeats ?? 0,
+      availableClasses: dto.availableClasses ?? [],
+      routeStops: dto.routeStops ?? [],
+    };
+  }
+
+  async selectIndirectTrip(indirectDto: any): Promise<void> {
+    const leg1 = this.mapDtoToUiTrip(indirectDto.legs[0]);
+    const leg2 = this.mapDtoToUiTrip(indirectDto.legs[1]);
+    await this.selectTrip(leg1, leg2);
+  }
+
+  async selectTrip(trip: any, secondIndirectLeg?: any): Promise<void> {
+    this.state.selectedLegs.push(trip);
+    if (secondIndirectLeg) {
+      this.state.selectedLegs.push(secondIndirectLeg);
+    }
+
+    this.state.currentLegIndex++;
+
+    if (this.state.currentLegIndex < this.state.searchQueries.length) {
+      // Fetch next leg
+      this.isSubmitting = true;
+      try {
+        const nextQuery = this.state.searchQueries[this.state.currentLegIndex];
+        await this.state.searchTrips(nextQuery);
+      } catch (e) {
+        alert('Failed to search next leg');
+      } finally {
+        this.isSubmitting = false;
+        this.showIndirect = false; // reset for next leg
+      }
       return;
     }
 
-    await this.router.navigate(['/passenger-details']);
+    // All legs selected
+    const needsSeatSelection = this.state.selectedLegs.some(
+      leg => !this.state.isTrainTrip(leg.agencyName || '', leg.transport || '')
+    );
+
+    if (needsSeatSelection) {
+      this.state.currentLegIndex = 0;
+      await this.router.navigate(['/seat-selection']);
+    } else {
+      await this.router.navigate(['/passenger-details']);
+    }
   }
 
   /** Convert display time like "02:30 PM" to "14:30" for comparison */
   private extractTimeString(displayTime: string): string {
     if (!displayTime) return '00:00';
-
-    // Try parsing "HH:MM AM/PM" format
     const match = displayTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
     if (match) {
       let hours = parseInt(match[1], 10);
       const minutes = match[2];
       const period = match[3].toUpperCase();
-
       if (period === 'PM' && hours !== 12) hours += 12;
       if (period === 'AM' && hours === 12) hours = 0;
-
       return `${hours.toString().padStart(2, '0')}:${minutes}`;
     }
-
-    // Already in 24h format
     const match24 = displayTime.match(/(\d{1,2}):(\d{2})/);
     if (match24) {
       return `${match24[1].padStart(2, '0')}:${match24[2]}`;
     }
-
     return '00:00';
   }
 

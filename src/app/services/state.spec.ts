@@ -114,4 +114,31 @@ describe('State', () => {
     expect(service.buyingMarketplaceTicketId).toBeNull();
   });
 
+  describe('isTrainTrip', () => {
+    it('should return true for train agencies and type strings', () => {
+      expect(service.isTrainTrip('EGYPTIAN NATIONAL RAILWAYS', '')).toBe(true);
+      expect(service.isTrainTrip('Go Train', '')).toBe(true);
+      expect(service.isTrainTrip('TALGO train', '')).toBe(true);
+      expect(service.isTrainTrip('', 'TRAIN')).toBe(true);
+      expect(service.isTrainTrip('ENR', '')).toBe(true);
+      expect(service.isTrainTrip('National Rail', '')).toBe(true);
+    });
+
+    it('should return true for train numeric transport types', () => {
+      expect(service.isTrainTrip('', 2)).toBe(true);
+      expect(service.isTrainTrip('', '2')).toBe(true);
+    });
+
+    it('should return false for bus agencies and type strings', () => {
+      expect(service.isTrainTrip('Go Bus', '')).toBe(false);
+      expect(service.isTrainTrip('Super Jet', '')).toBe(false);
+      expect(service.isTrainTrip('', 'BUS')).toBe(false);
+    });
+
+    it('should return false for bus numeric transport types', () => {
+      expect(service.isTrainTrip('', 1)).toBe(false);
+      expect(service.isTrainTrip('', '1')).toBe(false);
+    });
+  });
+
 });

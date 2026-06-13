@@ -11,7 +11,7 @@
       <div class="form-group">
         <label for="issueCategory">Issue Category</label>
         <select id="issueCategory" name="issueCategory" [(ngModel)]="issueCategory">
-          <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.label }}</option>
+          <option *ngFor="let cat of categories" [ngValue]="cat.value">{{ cat.label }}</option>
         </select>
       </div>
 

@@ -1,7 +1,7 @@
 .container{
-  max-width:1200px;
-  margin:auto;
-  padding:20px;
+  max-width: 1300px;
+  margin: auto;
+  padding: 20px;
 }
 
 .no-results{
@@ -19,18 +19,24 @@
   color:#8BA0B8;
 }
 
-
 .trips-page{
   padding-top:30px;
 }
 
-/* Header row with title and filter button */
-.trips-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-}
+  /* Header row with title and filter button */
+  .trips-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 25px;
+  }
+  
+  .header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
 
 .trips-header-row .title {
   margin-bottom: 0;
@@ -66,11 +72,6 @@
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
 }
 
-.filter-toggle-btn svg {
-  opacity: 0.9;
-}
-
-
 .trip-card{
   background:#112240;
   border: 1px solid #1E3A52;
@@ -79,7 +80,6 @@
   margin-bottom:20px;
   box-shadow:0 8px 18px rgba(0, 0, 0, 0.25);
 }
-
 
 .trip-header{
   display:flex;
@@ -107,7 +107,6 @@
   font-family: inherit;
 }
 
-
 .trip-details{
   display:flex;
   flex-wrap: wrap;
@@ -118,8 +117,7 @@
   font-family: inherit;
 }
 
-.trip-meta-row,
-.trip-station-row {
+.trip-meta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
@@ -129,42 +127,6 @@
   line-height: 20px;
   font-family: inherit;
 }
-
-.trip-classes,
-.trip-stops {
-  margin-bottom: 14px;
-}
-
-.trip-classes h4,
-.trip-stops h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  line-height: 20px;
-  color: #FFFFFF;
-  font-family: inherit;
-}
-
-.class-list,
-.stops-list {
-  display: grid;
-  gap: 8px;
-}
-
-.class-item,
-.stop-item {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  background: #1A3045;
-  border: 1px solid #1E3A52;
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 13px;
-  line-height: 18px;
-  color: #8BA0B8;
-  font-family: inherit;
-}
-
 
 .trip-footer{
   display:flex;
@@ -180,7 +142,6 @@
   font-size:13px;
   font-family: inherit;
 }
-
 
 .select-btn{
   background: linear-gradient(90deg, #00E5FF, #007AFF);
@@ -198,9 +159,13 @@
   opacity: 0.9;
 }
 
-/* ===== Filter Overlay & Panel ===== */
+/* ===== Layout Structure ===== */
+.trips-layout {
+  display: block;
+}
 
 .filter-backdrop {
+  display: block;
   position: fixed;
   top: 0;
   left: 0;
@@ -219,6 +184,7 @@
   pointer-events: auto;
 }
 
+/* ===== Desktop Filter Sidebar ===== */
 .filter-panel {
   position: fixed;
   top: 0;
@@ -245,11 +211,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .filter-panel-title {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   color: #FFFFFF;
   margin: 0;
@@ -260,7 +226,7 @@
   background: none;
   border: none;
   color: #00E5FF;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   padding: 4px 8px;
@@ -273,50 +239,36 @@
   background: rgba(0, 229, 255, 0.1);
 }
 
-/* Filter Sections */
 .filter-section {
-  margin-bottom: 28px;
-}
-
-.filter-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-bottom: 24px;
 }
 
 .filter-section-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #FFFFFF;
-  margin: 0 0 14px 0;
-  font-family: inherit;
-}
-
-.filter-value-label {
   font-size: 16px;
   font-weight: 600;
-  color: #00E5FF;
+  color: #FFFFFF;
+  margin: 0 0 12px 0;
   font-family: inherit;
 }
 
-/* Sort By Chips */
 .filter-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .filter-chip {
-  background: #1A2E4A;
+  background: #112240;
   border: 1px solid #1E3A52;
   color: #8BA0B8;
-  padding: 10px 18px;
-  border-radius: 24px;
+  padding: 12px 16px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s ease;
   font-family: inherit;
+  text-align: left;
 }
 
 .filter-chip:hover {
@@ -325,56 +277,84 @@
 }
 
 .filter-chip.active {
-  background: transparent;
+  background: #1A3045;
   border-color: #00E5FF;
   color: #00E5FF;
 }
 
-/* Transport Type Chips */
-.filter-transport-chips {
-  display: flex;
-  gap: 12px;
-}
-
-.transport-chip {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #1A2E4A;
-  border: 1px solid #1E3A52;
-  color: #8BA0B8;
-  padding: 16px 12px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 500;
+.filter-apply-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(90deg, #00E5FF, #00B8D4);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.3s ease;
   font-family: inherit;
 }
 
-.transport-chip:hover {
-  border-color: #00E5FF;
+.filter-apply-btn:hover {
+  background: linear-gradient(90deg, #00D4EA, #00A8C4);
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.3);
+}
+
+/* Transport Cards (like booking.html) */
+.transport-grid{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.transport-card{
+  border: 1px solid #1E3A52;
+  border-radius: 12px;
+  padding: 16px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.25s;
+  background: #0F1B2D;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  font-family: inherit;
   color: #FFFFFF;
 }
 
-.transport-chip.active {
-  background: rgba(0, 229, 255, 0.08);
-  border-color: #00E5FF;
-  color: #00E5FF;
+.transport-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-.transport-chip svg {
-  opacity: 0.7;
+.transport-card.active{
+  border: 2px solid #00B1DF;
+  background: #1A3045;
 }
 
-.transport-chip.active svg {
-  opacity: 1;
+.icon{
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 20px;
+  margin:auto;
+  margin-bottom:8px;
+  color: #FFFFFF;
 }
 
-/* Price Slider */
+.icon.bus{
+  background: #E67E22;
+}
+
+.icon.train{
+  background: #1A3A6B;
+}
+
+/* Range Slider */
 .filter-slider {
   width: 100%;
   height: 6px;
@@ -404,22 +384,28 @@
   box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
 }
 
-.filter-slider::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  background: #00E5FF;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 3px solid #0B1929;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
-}
-
 .filter-slider-labels {
   display: flex;
   justify-content: space-between;
   color: #5A7A96;
   font-size: 13px;
   margin-top: 4px;
+  font-family: inherit;
+}
+
+.filter-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.filter-section-header .filter-section-title {
+  margin-bottom: 0;
+}
+.filter-value-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #00E5FF;
   font-family: inherit;
 }
 
@@ -434,20 +420,15 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #1A2E4A;
+  background: #112240;
   border: 1px solid #1E3A52;
-  border-radius: 14px;
-  padding: 14px 16px;
+  border-radius: 12px;
+  padding: 10px 14px;
   transition: border-color 0.25s;
 }
 
 .filter-time-input:focus-within {
   border-color: #00E5FF;
-}
-
-.filter-time-input svg {
-  color: #5A7A96;
-  flex-shrink: 0;
 }
 
 .filter-time-content {
@@ -461,13 +442,14 @@
   font-size: 12px;
   color: #5A7A96;
   font-family: inherit;
+  margin-bottom: 2px;
 }
 
 .filter-time-input input[type="time"] {
   background: transparent;
   border: none;
   color: #FFFFFF;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   outline: none;
   width: 100%;
@@ -480,72 +462,103 @@
   cursor: pointer;
 }
 
-/* Apply Button */
-.filter-apply-btn {
-  margin-top: auto;
-  padding-top: 24px;
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(90deg, #00E5FF, #00B8D4);
-  color: #FFFFFF;
-  border: none;
-  border-radius: 14px;
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  letter-spacing: 0.5px;
-}
-
-.filter-apply-btn:hover {
-  background: linear-gradient(90deg, #00D4EA, #00A8C4);
-  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.3);
-  transform: translateY(-1px);
-}
-
-.filter-apply-btn:active {
-  transform: translateY(0);
-}
-
-
+/* Mobile Media Query for Slide-in Overlay */
 @media (max-width: 900px) {
-  .container {
-    padding: 16px;
-  }
-
-  .trip-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .trip-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .class-item,
-  .stop-item {
+  .trips-layout {
     grid-template-columns: 1fr;
   }
 
-  .filter-panel {
-    width: 100%;
-    max-width: 100vw;
+  .filter-toggle-btn {
+    display: flex;
   }
 
-  .filter-transport-chips {
+  .filter-panel {
+    width: 320px;
+    padding: 24px 20px;
+  }
+
+  .filter-chips {
+    flex-direction: row;
     flex-wrap: wrap;
   }
 
-  .transport-chip {
-    flex: 1 1 calc(33% - 8px);
-    min-width: 80px;
+  .filter-chip {
+    text-align: center;
+    border-radius: 20px;
+    padding: 8px 14px;
   }
+}
 
-  .filter-time-row {
-    flex-direction: column;
-  }
+/* ===== Trip Stops ===== */
+.trip-stops {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(30, 58, 82, 0.5);
+}
+
+.stops-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  color: #00E5FF;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.stops-toggle:hover {
+  opacity: 0.8;
+}
+
+.stops-list {
+  margin-top: 16px;
+  padding-left: 8px;
+}
+
+.stop-item {
+  display: flex;
+  gap: 16px;
+}
+
+.stop-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 12px;
+}
+
+.stop-dot {
+  width: 10px;
+  height: 10px;
+  background: #00E5FF;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+
+.stop-line {
+  flex: 1;
+  width: 2px;
+  background: #1E3A52;
+  margin: 4px 0;
+  min-height: 20px;
+}
+
+.stop-info {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+}
+
+.stop-name {
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.stop-time {
+  color: #8BA0B8;
+  font-size: 13px;
 }

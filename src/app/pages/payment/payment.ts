@@ -36,9 +36,7 @@ export class PaymentComponent implements OnInit {
   }
 
   async confirmPayment(): Promise<void> {
-    const booking = this.state.currentPaymentBooking;
-
-    if (!booking) {
+    if (!this.state.currentPaymentBooking) {
       return;
     }
 

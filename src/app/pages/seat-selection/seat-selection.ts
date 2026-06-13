@@ -16,22 +16,36 @@ export class SeatSelectionComponent implements OnInit {
   selectedSeatsLocal: string[] = [];
   loading = false;
   selectedClass: any = null;
+  currentLegIndex = 0;
 
   constructor(public state: AppStateService, private api: ApiService, public router: Router, private location: Location) {}
 
   async ngOnInit(): Promise<void> {
-    const trip = this.state.selectedTicket;
-    if (!trip) {
+    if (!this.state.selectedLegs || this.state.selectedLegs.length === 0) {
       await this.router.navigate(['/trips']);
       return;
     }
 
+    // Find first leg that requires seat selection (bus)
+    this.currentLegIndex = this.state.selectedLegs.findIndex(leg => !this.state.isTrainTrip(leg.agencyName || '', leg.transport || ''));
+
+    if (this.currentLegIndex === -1) {
+      this.router.navigate(['/passenger-details']);
+      return;
+    }
+
+    await this.loadSeats();
+  }
+
+  async loadSeats() {
+    const trip = this.tripInfo;
+    this.selectedSeatsLocal = trip.selectedSeats || [];
     try {
       this.loading = true;
       const map = await this.api.getSeatMap(trip.tripOccurrenceId).toPromise();
       this.seatMap = map;
       if (map && map.classes && map.classes.length > 0) {
-        this.selectedClass = map.classes[0];
+        this.selectedClass = map.classes.find((c: any) => c.coachClassId === trip.coachClassId) || map.classes[0];
       }
     } catch {
       this.seatMap = null;
@@ -47,6 +61,10 @@ export class SeatSelectionComponent implements OnInit {
 
     const idx = this.selectedSeatsLocal.indexOf(seatNumber);
     if (idx === -1) {
+      if (this.selectedSeatsLocal.length >= this.state.searchPassengers) {
+        alert(`You can only select ${this.state.searchPassengers} seat(s).`);
+        return;
+      }
       this.selectedSeatsLocal.push(seatNumber);
     } else {
       this.selectedSeatsLocal.splice(idx, 1);
@@ -72,17 +90,50 @@ export class SeatSelectionComponent implements OnInit {
   }
 
   goBack(): void {
+    if (this.currentLegIndex > 0) {
+      // Find previous leg that required seat selection
+      let prevIndex = -1;
+      for (let i = this.currentLegIndex - 1; i >= 0; i--) {
+        const leg = this.state.selectedLegs[i];
+        if (!this.state.isTrainTrip(leg.agencyName || '', leg.transport || '')) {
+          prevIndex = i;
+          break;
+        }
+      }
+      if (prevIndex !== -1) {
+        this.currentLegIndex = prevIndex;
+        this.loadSeats();
+        return;
+      }
+    }
     this.location.back();
   }
 
   continue(): void {
-    if (this.selectedSeatsLocal.length === 0) return;
-    this.state.selectedSeats = [...this.selectedSeatsLocal];
-    this.router.navigate(['/passenger-details']);
+    if (this.selectedSeatsLocal.length !== this.state.searchPassengers) {
+      alert(`Please select exactly ${this.state.searchPassengers} seat(s).`);
+      return;
+    }
+
+    this.tripInfo.selectedSeats = [...this.selectedSeatsLocal];
+
+    // Find next leg that requires seat selection
+    let nextIndex = this.state.selectedLegs.findIndex((leg, idx) => idx > this.currentLegIndex && !this.state.isTrainTrip(leg.agencyName || '', leg.transport || ''));
+
+    if (nextIndex !== -1) {
+      this.currentLegIndex = nextIndex;
+      this.loadSeats();
+    } else {
+      this.router.navigate(['/passenger-details']);
+    }
   }
 
   get tripInfo() {
-    return this.state.selectedTicket;
+    return this.state.selectedLegs[this.currentLegIndex];
+  }
+
+  get isLastSeatSelection() {
+    return this.state.selectedLegs.findIndex((leg, idx) => idx > this.currentLegIndex && !this.state.isTrainTrip(leg.agencyName || '', leg.transport || '')) === -1;
   }
 
   get totalPrice(): number {

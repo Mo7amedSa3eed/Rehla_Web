@@ -64,7 +64,7 @@
 
         <div class="card-clickable-area" (click)="toggleDetails(ticket.id)">
           <!-- Card Header: Class name + Status -->
-          <div class="card-top-row">
+          <div class="card-top-row" [ngClass]="getAgencyClass(ticket.agencyName)">
             <div class="class-name">
               <span class="class-icon">🚆</span> {{ticket.agencyName ? ticket.agencyName + ' - ' + ticket.className : ticket.className || 'Train'}}
             </div>

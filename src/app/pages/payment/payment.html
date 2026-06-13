@@ -6,39 +6,33 @@
 
 
     <div class="summary">
-
       <h3>Booking Summary</h3>
 
       <div class="row">
         <span>Route:</span>
         <span>{{state.currentPaymentBooking?.from}} → {{state.currentPaymentBooking?.to}}</span>
       </div>
-
       <div class="row">
         <span>📅 Date & ⏰ Time:</span>
         <span>{{state.currentPaymentBooking?.date}} at {{state.currentPaymentBooking?.time}}</span>
       </div>
-
       <div class="row">
         <span>⏳ Duration:</span>
         <span>{{state.currentPaymentBooking?.duration}}</span>
       </div>
-      
       <div class="row">
         <span>Transport:</span>
-        <span>🚆 Train</span>
+        <span>{{state.currentPaymentBooking?.agencyName || 'Transport'}}</span>
       </div>
-
       <div class="row">
         <span>👤Passengers:</span>
-          <p>{{state.currentPaymentBooking?.passengers}} Passenger(s)</p>
+        <p>{{state.currentPaymentBooking?.passengers}} Passenger(s)</p>
       </div>
 
       <div class="total">
         <span>Total Amount:</span>
-        <span class="price">{{state.currentPaymentBooking?.price| number:'1.2-2'}} EGP</span>
+        <span class="price">{{state.currentPaymentBooking?.price | number:'1.2-2'}} EGP</span>
       </div>
-
     </div>
 
 

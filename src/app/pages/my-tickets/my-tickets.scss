@@ -202,7 +202,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin: -22px -24px 16px -24px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #1E3A52;
+}
+
+.agency-orange {
+  background: rgba(230, 126, 34, 0.25);
+  border-bottom: 1px solid rgba(230, 126, 34, 0.4);
+}
+
+.agency-purple {
+  background: rgba(155, 89, 182, 0.25);
+  border-bottom: 1px solid rgba(155, 89, 182, 0.4);
+}
+
+.agency-green {
+  background: rgba(46, 204, 113, 0.25);
+  border-bottom: 1px solid rgba(46, 204, 113, 0.4);
 }
 
 .class-name {
