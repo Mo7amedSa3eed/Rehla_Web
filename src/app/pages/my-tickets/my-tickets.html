@@ -223,7 +223,8 @@
     <div class="marketplace-stats-grid" *ngIf="!isLoading && marketplaceTickets.length > 0">
       <div class="stat-card">
         <div class="stat-icon yellow">⚡</div>
-        <div class="stat-value">-{{averageDiscount | number:'1.0-0'}}%</div>
+        <div class="stat-value" *ngIf="averageDiscount > 0">-{{averageDiscount | number:'1.0-0'}}%</div>
+        <div class="stat-value" *ngIf="averageDiscount === 0">-</div>
         <div class="stat-label">Avg. Discount</div>
       </div>
       <div class="stat-card">
@@ -290,11 +291,14 @@
         <!-- Bottom Price Row -->
         <div class="mp-bottom-row">
           <div class="mp-price-info">
-            <div class="old-price" *ngIf="ticket.originalPrice > ticket.price">{{ticket.originalPrice}} EGP</div>
+            <div class="old-price" [style.text-decoration]="ticket.originalPrice === ticket.price ? 'none' : 'line-through'">Orig: {{ticket.originalPrice}} EGP</div>
             <div class="new-price-row">
               <span class="new-price">{{ticket.price | number:'1.0-2'}} EGP</span>
               <span class="discount-badge" *ngIf="ticket.originalPrice > ticket.price">
                 -{{ ((ticket.originalPrice - ticket.price) / ticket.originalPrice * 100) | number:'1.0-0' }}%
+              </span>
+              <span class="markup-badge" *ngIf="ticket.price > ticket.originalPrice">
+                +{{ ((ticket.price - ticket.originalPrice) / ticket.originalPrice * 100) | number:'1.0-0' }}%
               </span>
             </div>
           </div>
@@ -425,21 +429,30 @@
           </div>
 
           <div class="bp-qr-section">
-            <div *ngIf="qrLoading" class="qr-loading">Loading QR...</div>
-            <div *ngIf="qrError" class="qr-error">{{ qrError }}</div>
-            <div *ngIf="!qrLoading && qrPayload" class="qr-code-wrapper">
-              <qrcode [qrdata]="qrPayload" [width]="180" [errorCorrectionLevel]="'M'"></qrcode>
+            <div *ngIf="ticketTab === 'past'" class="past-ticket-icon" style="margin: 20px 0;">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
             </div>
+            <ng-container *ngIf="ticketTab !== 'past'">
+              <div *ngIf="qrLoading" class="qr-loading">Loading QR...</div>
+              <div *ngIf="qrError" class="qr-error">{{ qrError }}</div>
+              <div *ngIf="!qrLoading && qrPayload" class="qr-code-wrapper">
+                <qrcode [qrdata]="qrPayload" [width]="180" [errorCorrectionLevel]="'M'"></qrcode>
+              </div>
+            </ng-container>
             <div class="bp-generated-time">Generated: {{ undefined | date:'medium' }}</div>
           </div>
         </div>
       </div>
 
       <div class="bp-actions">
-        <button class="bp-btn outline" (click)="printBoardingPass()" [disabled]="qrLoading || qrError">
+        <button class="bp-btn outline" (click)="printBoardingPass()" [disabled]="qrLoading || qrError || ticketTab === 'past'">
           🖨️ Print
         </button>
-        <button class="bp-btn primary" (click)="downloadBoardingPass()" [disabled]="qrLoading || qrError">
+        <button class="bp-btn primary" (click)="downloadBoardingPass()" [disabled]="qrLoading || qrError || ticketTab === 'past'">
           📥 Download PDF
         </button>
       </div>

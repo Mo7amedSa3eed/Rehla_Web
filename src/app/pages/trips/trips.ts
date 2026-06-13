@@ -65,34 +65,28 @@ export class TripsComponent implements OnInit {
     }
   }
 
-  applyFilters(): void {
+  async applyFilters(): Promise<void> {
+    const q = this.state.searchQueries[this.state.currentLegIndex];
+    if (q) {
+      q.pageNumber = 1;
+      q.pageSize = 10;
+      q.maxPrice = this.filterMaxPrice < this.maxPriceLimit ? this.filterMaxPrice : undefined;
+      q.transport = this.filterTransport === 'bus' ? 1 : (this.filterTransport === 'train' ? 2 : 0);
+      q.sortBy = this.filterSortBy === 'price' ? 1 : (this.filterSortBy === 'duration' ? 2 : 3);
+      
+      this.isSubmitting = true;
+      try {
+        await this.state.searchTrips(q);
+      } catch (e) {
+        console.error('Failed to apply filters', e);
+      } finally {
+        this.isSubmitting = false;
+      }
+    }
+
     let results = [...this.state.searchResults];
 
-    // Filter by transport type
-    if (this.filterTransport !== 'all') {
-      results = results.filter(trip => {
-        const agencyLower = (trip.agencyName || '').toLowerCase();
-        const transportLower = (trip.transport || '').toLowerCase();
-        
-        const isTrain = agencyLower.includes('train') || transportLower.includes('train') || 
-                        agencyLower.includes('railway') || transportLower.includes('railway');
-        
-        if (this.filterTransport === 'bus') {
-          return !isTrain;
-        }
-        if (this.filterTransport === 'train') {
-          return isTrain;
-        }
-        return true;
-      });
-    }
-
-    // Filter by max price
-    if (this.filterMaxPrice < this.maxPriceLimit) {
-      results = results.filter(trip => trip.price <= this.filterMaxPrice);
-    }
-
-    // Filter by departure time
+    // Filter by departure time (Client-side only)
     if (this.filterDepartureFrom) {
       results = results.filter(trip => {
         const tripTime = this.extractTimeString(trip.departureTime);
@@ -106,7 +100,7 @@ export class TripsComponent implements OnInit {
       });
     }
 
-    // Filter by arrival time
+    // Filter by arrival time (Client-side only)
     if (this.filterArrivalFrom) {
       results = results.filter(trip => {
         const tripTime = this.extractTimeString(trip.arrivalTime);
@@ -120,21 +114,65 @@ export class TripsComponent implements OnInit {
       });
     }
 
-    // Sort
-    if (this.filterSortBy === 'price') {
-      results.sort((a, b) => a.price - b.price);
-    } else if (this.filterSortBy === 'duration') {
-      results.sort((a, b) => this.parseDuration(a.duration) - this.parseDuration(b.duration));
-    } else {
-      // departure time
-      results.sort((a, b) =>
-        this.extractTimeString(a.departureTime).localeCompare(this.extractTimeString(b.departureTime))
-      );
+    this._filteredCache = results;
+    this._appliedFilters = true;
+    this.showFilters = false;
+  }
+
+  async nextPage(): Promise<void> {
+    if (this.state.searchTripsCurrentPage < this.state.searchTripsTotalPages) {
+      const q = this.state.searchQueries[this.state.currentLegIndex];
+      q.pageNumber = this.state.searchTripsCurrentPage + 1;
+      q.pageSize = 10;
+      this.isSubmitting = true;
+      try {
+        await this.state.searchTrips(q);
+        this.applyLocalFiltersOnly();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        console.error('Failed to load next page', e);
+      } finally {
+        this.isSubmitting = false;
+      }
+    }
+  }
+
+  async prevPage(): Promise<void> {
+    if (this.state.searchTripsCurrentPage > 1) {
+      const q = this.state.searchQueries[this.state.currentLegIndex];
+      q.pageNumber = this.state.searchTripsCurrentPage - 1;
+      q.pageSize = 10;
+      this.isSubmitting = true;
+      try {
+        await this.state.searchTrips(q);
+        this.applyLocalFiltersOnly();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        console.error('Failed to load previous page', e);
+      } finally {
+        this.isSubmitting = false;
+      }
+    }
+  }
+
+  private applyLocalFiltersOnly(): void {
+    let results = [...this.state.searchResults];
+
+    if (this.filterDepartureFrom) {
+      results = results.filter(trip => this.extractTimeString(trip.departureTime) >= this.filterDepartureFrom);
+    }
+    if (this.filterDepartureTo) {
+      results = results.filter(trip => this.extractTimeString(trip.departureTime) <= this.filterDepartureTo);
+    }
+    if (this.filterArrivalFrom) {
+      results = results.filter(trip => this.extractTimeString(trip.arrivalTime) >= this.filterArrivalFrom);
+    }
+    if (this.filterArrivalTo) {
+      results = results.filter(trip => this.extractTimeString(trip.arrivalTime) <= this.filterArrivalTo);
     }
 
     this._filteredCache = results;
     this._appliedFilters = true;
-    this.showFilters = false;
   }
 
   resetFilters(): void {

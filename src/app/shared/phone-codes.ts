@@ -38,7 +38,12 @@ export function normalizeDialCode(code: string): string {
 
 export function buildE164Number(dialCode: string, localNumber: string): string {
   const normalizedCode = normalizeDialCode(dialCode);
-  const normalizedLocal = localNumber.replace(/\D/g, '');
+  let normalizedLocal = localNumber.replace(/\D/g, '');
+  
+  if (normalizedCode === '+20' && normalizedLocal.startsWith('0')) {
+    normalizedLocal = normalizedLocal.substring(1);
+  }
+  
   return `${normalizedCode}${normalizedLocal}`;
 }
 
@@ -48,13 +53,25 @@ export function getLocalNumberConstraints(dialCode: string): LocalNumberConstrai
 }
 
 export function getLocalNumberPattern(dialCode: string): string {
+  const normalizedCode = normalizeDialCode(dialCode);
   const { min, max } = getLocalNumberConstraints(dialCode);
+  
+  if (normalizedCode === '+20') {
+    return `^01\\d{${min - 2},${max - 2}}$`;
+  }
+  
   return `^\\d{${min},${max}}$`;
 }
 
 export function isLocalNumberValid(dialCode: string, localNumber: string): boolean {
-  const { min, max } = getLocalNumberConstraints(dialCode);
+  const normalizedCode = normalizeDialCode(dialCode);
   const digits = localNumber.replace(/\D/g, '');
+  const { min, max } = getLocalNumberConstraints(dialCode);
+  
+  if (normalizedCode === '+20' && !digits.startsWith('01')) {
+    return false;
+  }
+  
   return digits.length >= min && digits.length <= max;
 }
 
@@ -78,9 +95,16 @@ export function splitPhoneNumber(
     };
   }
 
+  let localNumber = withPlus.slice(matchedCode.length);
+  
+  // Auto-correct Egyptian numbers that start with '1' and are 10 digits long
+  if (matchedCode === '+20' && localNumber.startsWith('1') && localNumber.length === 10) {
+    localNumber = '0' + localNumber;
+  }
+
   return {
     dialCode: matchedCode,
-    localNumber: withPlus.slice(matchedCode.length),
+    localNumber: localNumber,
   };
 }
 

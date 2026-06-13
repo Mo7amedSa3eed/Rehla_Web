@@ -163,8 +163,6 @@
               <span>📅 {{trip.date}}</span>
               <span>🕒 Boarding {{trip.time}}</span>
               <span>🕒 Dropoff {{trip.dropoffTime}}</span>
-              <span>🚍 Departure {{trip.departureTime}}</span>
-              <span>🏁 Arrival {{trip.arrivalTime}}</span>
               <span>⏱ {{trip.duration}}</span>
             </div>
 
@@ -198,6 +196,18 @@
               </button>
             </div>
           </div>
+
+          <!-- Pagination Controls -->
+          <div class="pagination-controls" *ngIf="state.searchTripsTotalPages > 1">
+            <button class="btn btn-secondary" (click)="prevPage()" [disabled]="state.searchTripsCurrentPage <= 1">
+              &larr; Previous
+            </button>
+            <span class="page-info">Page {{state.searchTripsCurrentPage}} of {{state.searchTripsTotalPages}}</span>
+            <button class="btn btn-secondary" (click)="nextPage()" [disabled]="state.searchTripsCurrentPage >= state.searchTripsTotalPages">
+              Next &rarr;
+            </button>
+          </div>
+
         </ng-container>
 
         <!-- INDIRECT TRIPS -->

@@ -221,6 +221,9 @@ export class AppStateService {
   selectedLegs: any[] = [];
   indirectSearchResults: any[] = [];
 
+  searchTripsCurrentPage: number = 1;
+  searchTripsTotalPages: number = 1;
+
   async searchTrips(criteria: {
     travelDate: string;
     fromGovernorate: string;
@@ -230,6 +233,10 @@ export class AppStateService {
     passengers: number;
     transport?: number;
     preferredAgencies?: string[];
+    pageNumber?: number;
+    pageSize?: number;
+    sortBy?: number;
+    maxPrice?: number;
   }): Promise<void> {
     if (!this.isBrowser()) {
       return;
@@ -247,8 +254,16 @@ export class AppStateService {
         passengers: criteria.passengers,
         transport: criteria.transport,
         preferredAgencies: criteria.preferredAgencies,
+        pageNumber: criteria.pageNumber ?? 1,
+        pageSize: criteria.pageSize ?? 10,
+        sortBy: criteria.sortBy,
+        maxPrice: criteria.maxPrice
       }),
     );
+
+    this.searchResults = primaryResult.items.map((trip) => this.mapTripToUi(trip));
+    this.searchTripsCurrentPage = primaryResult.currentPage || 1;
+    this.searchTripsTotalPages = primaryResult.totalPages || 1;
 
     const result =
       primaryResult.items.length === 0 && typeof criteria.transport === 'number' && criteria.transport !== 0
@@ -1078,9 +1093,45 @@ export class AppStateService {
     };
   }
 
+  private localizedField(
+    source: any,
+    isArabic: boolean,
+    options: { keys: string[]; arabicKeys: string[]; fallback?: string | null }
+  ): string {
+    if (!source) return options.fallback || '';
+    if (isArabic) {
+      for (const key of options.arabicKeys) {
+        const value = String(source[key] ?? '').trim();
+        if (value) return value;
+      }
+    }
+    for (const key of options.keys) {
+      const value = String(source[key] ?? '').trim();
+      if (value) return value;
+    }
+    return (options.fallback ?? '').trim();
+  }
+
+  private cleanClassName(raw: string): string {
+    const seen = new Set<string>();
+    return raw
+      .split(' - ')
+      .filter(part => {
+        const trimmed = part.trim();
+        if (seen.has(trimmed)) return false;
+        seen.add(trimmed);
+        return true;
+      })
+      .join(' - ');
+  }
+
   private mapMarketplaceToUi(result: MarketplaceActiveListingsDto): MarketplaceListing[] {
+    const isArabic = false; // Add i18n logic here if implemented later
+
     return (result.items ?? []).map((listing) => {
-      const time = new Date(listing.tripDetails.time);
+      const trip = listing.tripDetails ?? {};
+      const time = trip.time ? new Date(trip.time) : new Date();
+
       const dateLabel = time.toLocaleDateString('en-US', {
         month: 'short',
         day: '2-digit',
@@ -1092,24 +1143,70 @@ export class AppStateService {
         minute: '2-digit',
       });
 
+      const originGov = this.localizedField(trip, isArabic, {
+        keys: ['originGovEn', 'originGovernorate', 'originGov'],
+        arabicKeys: ['originGovAr', 'originGovernorateAr'],
+      });
+      const destinationGov = this.localizedField(trip, isArabic, {
+        keys: ['destinationGovEn', 'destinationGovernorate', 'destinationGov'],
+        arabicKeys: ['destinationGovAr', 'destinationGovernorateAr'],
+      });
+      const originCity = this.localizedField(trip, isArabic, {
+        keys: ['originStationNameEn', 'origin', 'originStation', 'originName'],
+        arabicKeys: ['originAr', 'originStationNameAr', 'originNameAr'],
+      });
+      const destinationCity = this.localizedField(trip, isArabic, {
+        keys: ['destinationStationNameEn', 'destination', 'destinationStation', 'destinationName'],
+        arabicKeys: ['destinationAr', 'destinationStationNameAr', 'destinationNameAr'],
+      });
+      const agencyName = this.localizedField(trip, isArabic, {
+        keys: ['agencyName'],
+        arabicKeys: ['agencyNameAr', 'agencyAr'],
+        fallback: (listing as any).agency ?? '',
+      });
+      const className = this.cleanClassName(
+        this.localizedField(trip, isArabic, {
+          keys: ['class'],
+          arabicKeys: ['classNameAr', 'classAr'],
+          fallback: 'Standard',
+        })
+      );
+
+      const fromLabel = originGov || originCity || 'Unknown';
+      const toLabel = destinationGov || destinationCity || 'Unknown';
+
+      // Reformat seller name from "First Family Last" to "First Last Family"
+      let formattedSellerName = listing.sellerName || 'Seller';
+      const nameParts = formattedSellerName.split(' ').filter(p => p.trim().length > 0);
+      if (nameParts.length >= 3 && formattedSellerName !== 'Seller') {
+        const first = nameParts[0];
+        const last = nameParts[nameParts.length - 1];
+        const family = nameParts.slice(1, nameParts.length - 1).join(' ');
+        formattedSellerName = `${first} ${last} ${family}`;
+      }
+
       return {
         listingId: listing.listingId,
         ticketId: listing.listingId,
         ownerId: listing.ownerId,
         sellerId: listing.sellerId ?? listing.ownerId,
-        from: this.extractLocation(listing.tripDetails, listing, 'origin'),
-        to: this.extractLocation(listing.tripDetails, listing, 'destination'),
+        from: fromLabel,
+        to: toLabel,
+        originCity: originCity || null,
+        destinationCity: destinationCity || null,
+        originGov: originGov || null,
+        destinationGov: destinationGov || null,
         date: dateLabel,
         time: timeLabel,
         duration: '',
         passengers: listing.seatsCount ?? listing.seatsBooked ?? 0,
         seat: '',
-        originalPrice: listing.originalPrice,
-        price: listing.askingPrice,
+        originalPrice: Number(listing.originalPrice ?? 0),
+        price: Number(listing.askingPrice ?? 0),
         status: 'available',
-        sellerName: listing.sellerName,
-        className: listing.tripDetails.class,
-        agencyName: listing.agencyName ?? listing.agency ?? listing.tripDetails.agencyName,
+        sellerName: formattedSellerName,
+        className: className,
+        agencyName: agencyName,
         transportType: listing.transportType,
       };
     });

@@ -344,6 +344,11 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     this.qrError = '';
     this.qrLoading = true;
 
+    if (this.ticketTab === 'past') {
+      this.qrLoading = false;
+      return;
+    }
+
     try {
       const pid = passenger.passengerId ?? 0;
       if (pid > 0) {
@@ -415,7 +420,11 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   // ─── Marketplace ───
 
   get marketplaceTickets(): MarketplaceListing[] {
-    return this.state.marketplace.filter((ticket) => !this.isOwnListing(ticket));
+    const userId = this.state.userProfile?.userId;
+    return this.state.marketplace.filter((ticket) => {
+      const sellerId = ticket.sellerId ?? null;
+      return sellerId == null || sellerId !== userId;
+    });
   }
 
   get averageDiscount(): number {
@@ -423,12 +432,18 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     if (!tickets || tickets.length === 0) return 0;
 
     let totalDiscount = 0;
-    tickets.forEach(t => {
-      if (t.originalPrice > 0 && t.originalPrice > t.price) {
-        totalDiscount += ((t.originalPrice - t.price) / t.originalPrice) * 100;
+    let validCount = 0;
+
+    for (const item of tickets) {
+      const original = Number(item.originalPrice ?? 0);
+      const asking = Number(item.price ?? 0);
+      if (original > 0 && asking < original) {
+        totalDiscount += ((original - asking) / original) * 100;
+        validCount++;
       }
-    });
-    return totalDiscount / tickets.length;
+    }
+
+    return validCount > 0 ? totalDiscount / validCount : 0;
   }
 
   private isOwnListing(ticket: { sellerId?: number; ownerId?: number; sellerName?: string }): boolean {

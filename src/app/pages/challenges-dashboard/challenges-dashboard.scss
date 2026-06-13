@@ -294,12 +294,24 @@
 .error-state,
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  font-size: 16px;
-  color: #8ba0b8;
-  background: #112240;
-  border-radius: 16px;
+  padding: 40px;
+  color: #8BA0B8;
+  background: rgba(15, 27, 45, 0.4);
+  border-radius: 12px;
   border: 1px dashed #1E3A52;
+}
+
+.challenge-category {
+  margin-bottom: 40px;
+}
+
+.category-title {
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1E3A52;
 }
 
 .error-state {

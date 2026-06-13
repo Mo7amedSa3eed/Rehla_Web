@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AppStateService } from '../../services/state';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApiService, WalletHistoryItemDto } from '../../services/api';
+import { ApiService, WalletHistoryItemDto, SupportTicketDto } from '../../services/api';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -29,6 +29,12 @@ export class ProfileComponent implements OnInit {
   walletHistory: WalletHistoryItemDto[] = [];
   isLoadingWalletHistory = false;
   walletHistoryError = '';
+
+  // Support Tickets
+  showSupportTicketsModal = false;
+  supportTickets: SupportTicketDto[] = [];
+  isLoadingSupportTickets = false;
+  supportTicketsError = '';
 
   constructor(
     public state: AppStateService,
@@ -133,6 +139,54 @@ export class ProfileComponent implements OnInit {
 
   onWalletHistoryOverlayClick(event: MouseEvent): void {
     if (event.target === event.currentTarget) this.closeWalletHistory();
+  }
+
+  async openSupportTickets(): Promise<void> {
+    this.showSupportTicketsModal = true;
+    this.supportTicketsError = '';
+    this.isLoadingSupportTickets = true;
+    try {
+      const pagedResult: any = await firstValueFrom(this.api.getMySupportTickets({ pageNumber: 1, pageSize: 50 }));
+      if (Array.isArray(pagedResult)) {
+        this.supportTickets = pagedResult;
+      } else if (pagedResult && pagedResult.items) {
+        this.supportTickets = pagedResult.items;
+      } else {
+        this.supportTicketsError = 'Raw: ' + JSON.stringify(pagedResult);
+        this.supportTickets = [];
+      }
+    } catch (e) {
+      this.supportTicketsError = e instanceof Error ? e.message : 'Failed to load support tickets.';
+    } finally {
+      this.isLoadingSupportTickets = false;
+    }
+  }
+
+  closeSupportTickets(): void {
+    this.showSupportTicketsModal = false;
+  }
+
+  onSupportTicketsOverlayClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) this.closeSupportTickets();
+  }
+
+  getCategoryName(category: any): string {
+    if (category === 1 || category === '1') return 'Payment';
+    if (category === 2 || category === '2') return 'Trip Experience';
+    if (category === 3 || category === '3') return 'App Bug';
+    if (category === 4 || category === '4') return 'Account Issue';
+    if (category === 5 || category === '5') return 'Other';
+    return String(category || 'Unknown');
+  }
+
+  getCategoryClass(category: any): string {
+    const name = this.getCategoryName(category).toLowerCase();
+    if (name.includes('other')) return 'cat-gray';
+    if (name.includes('account')) return 'cat-purple';
+    if (name.includes('bug')) return 'cat-orange';
+    if (name.includes('trip')) return 'cat-lightblue';
+    if (name.includes('payment')) return 'cat-yellow';
+    return 'cat-default';
   }
 
   onCvvChange(value: string): void {

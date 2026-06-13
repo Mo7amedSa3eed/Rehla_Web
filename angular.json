@@ -22,6 +22,16 @@
               "zone.js"
             ],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "jspdf",
+              "html2canvas",
+              "canvg",
+              "qrcode",
+              "fflate",
+              "dompurify",
+              "rgbcolor",
+              "raf"
+            ],
             "inlineStyleLanguage": "scss",
             "assets": [
               {

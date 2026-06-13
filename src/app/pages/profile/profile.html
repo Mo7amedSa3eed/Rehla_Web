@@ -101,6 +101,7 @@
       <button class="action-btn" routerLink="/my-tickets">🎟️ My Tickets</button>
       <button class="action-btn" routerLink="/challenges">💎 Loyalty Hub</button>
       <button class="action-btn" routerLink="/report-issue">🚨 Report an Issue</button>
+      <button class="action-btn" (click)="openSupportTickets()">🎫 Support Tickets</button>
       <button class="action-btn logout-action" (click)="logout()">🔐 Logout</button>
     </div>
 
@@ -167,6 +168,37 @@
         <span class="history-amount" [class.credit]="tx.amount > 0" [class.debit]="tx.amount < 0">
           {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount | number:'1.2-2' }} EGP
         </span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Support Tickets Modal -->
+<div class="wallet-modal-overlay" *ngIf="showSupportTicketsModal" (click)="onSupportTicketsOverlayClick($event)">
+  <section class="wallet-modal card support-tickets-modal">
+    <div class="wallet-modal-header">
+      <h3>Support Tickets</h3>
+      <button class="wallet-close" type="button" (click)="closeSupportTickets()">×</button>
+    </div>
+    <div *ngIf="isLoadingSupportTickets" class="loading-spinner">Loading...</div>
+    <p class="wallet-error" *ngIf="supportTicketsError">{{ supportTicketsError }}</p>
+    <div *ngIf="!isLoadingSupportTickets && supportTickets.length === 0 && !supportTicketsError" class="empty-state">
+      You haven't submitted any support tickets.
+    </div>
+    <div class="support-tickets-list">
+      <div class="support-ticket-item" *ngFor="let ticket of supportTickets">
+        <div class="ticket-header">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span class="ticket-id">#{{ ticket.ticketId }}</span>
+            <span class="ticket-status" [ngClass]="ticket.status | lowercase">{{ ticket.status }}</span>
+          </div>
+          <span class="ticket-category" [ngClass]="getCategoryClass(ticket.category)">{{ getCategoryName(ticket.category) }}</span>
+        </div>
+        <h4 class="ticket-title">{{ ticket.title }}</h4>
+        <p class="ticket-desc">{{ ticket.description }}</p>
+        <div class="ticket-footer">
+          <span class="ticket-date">{{ ticket.createdAt | date:'medium' }}</span>
+        </div>
       </div>
     </div>
   </section>

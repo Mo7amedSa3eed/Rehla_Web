@@ -97,6 +97,29 @@ export class ChallengesDashboardComponent implements OnInit {
     return Math.min(100, Math.round((c.currentProgress / c.goalValue) * 100));
   }
 
+  get oneTimeChallenges(): UserChallengeDto[] {
+    return this.challenges.filter(c => {
+      const f = String(c.frequency).toLowerCase();
+      return f === 'onetime' || f === 'one-time' || f === '1' || f === '0';
+    });
+  }
+
+  get monthlyChallenges(): UserChallengeDto[] {
+    return this.challenges.filter(c => {
+      const f = String(c.frequency).toLowerCase();
+      return f === 'monthly' || f === '2';
+    });
+  }
+
+  get otherChallenges(): UserChallengeDto[] {
+    return this.challenges.filter(c => {
+      const f = String(c.frequency).toLowerCase();
+      const isOneTime = f === 'onetime' || f === 'one-time' || f === '1' || f === '0';
+      const isMonthly = f === 'monthly' || f === '2';
+      return !isOneTime && !isMonthly;
+    });
+  }
+
   // ── Points History ────────────────────────────────────────────────────────
   async loadPointHistory(reset = false): Promise<void> {
     if (reset) { this.pointHistory = []; this.pointHistoryCurrentPage = 1; }

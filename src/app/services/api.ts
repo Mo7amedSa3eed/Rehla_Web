@@ -797,10 +797,10 @@ export class ApiService {
     return this.buyMarketplaceTicket(listingId);
   }
 
-  buyMarketplaceTicket(listingId: number, passengers?: { passengerName: string; idType?: string; idNumber?: string }[]): Observable<void> {
-    const body = passengers ? { passengers } : null;
+  buyMarketplaceTicket(listingId: number, passengers?: { passengerName?: string; idType?: string; idNumber?: string; seatNumber?: string }[]): Observable<void> {
+    const body = passengers ? { passengers } : { passengers: [] };
     return this.http
-      .post<ApiResponse<null>>(`${this.baseUrl}/Marketplace/buy/${listingId}`, body, {
+      .post<ApiResponse<null>>(`${this.baseUrl}/Marketplace/listings/${listingId}/buy`, body, {
         headers: this.authHeaders(),
       })
       .pipe(map((response) => {
@@ -940,6 +940,24 @@ export class ApiService {
     return this.http
       .post<ApiResponse<SupportTicketDto>>(`${this.baseUrl}/Support/tickets`, payload, {
         headers: this.authHeaders(),
+      })
+      .pipe(map((response) => this.unwrap(response)));
+  }
+
+  getMySupportTickets(params?: { pageNumber?: number; pageSize?: number }): Observable<PagedResult<SupportTicketDto>> {
+    let httpParams = new HttpParams();
+    if (params) {
+      if (typeof params.pageNumber === 'number') {
+        httpParams = httpParams.set('pageNumber', String(params.pageNumber));
+      }
+      if (typeof params.pageSize === 'number') {
+        httpParams = httpParams.set('pageSize', String(params.pageSize));
+      }
+    }
+    return this.http
+      .get<ApiResponse<PagedResult<SupportTicketDto>>>(`${this.baseUrl}/Support/tickets`, {
+        headers: this.authHeaders(),
+        params: httpParams,
       })
       .pipe(map((response) => this.unwrap(response)));
   }

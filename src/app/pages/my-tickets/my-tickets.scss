@@ -790,12 +790,23 @@
   margin-bottom: 12px;
 }
 
-.qr-loading, .qr-error {
-  height: 180px;
-  display: flex; align-items: center; justify-content: center;
-  color: #666666;
+.qr-loading,
+.qr-error {
+  text-align: center;
+  padding: 20px;
+  color: #8BA0B8;
 }
-.qr-error { color: #FF6384; }
+
+.qr-error {
+  color: #FF6B6B;
+}
+
+.past-ticket-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
 
 .bp-generated-time {
   font-size: 10px;
@@ -924,6 +935,9 @@
 .new-price { color: #00D65B; font-size: 24px; font-weight: 700; }
 .discount-badge {
   background: rgba(0, 214, 91, 0.1); color: #00D65B; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600;
+}
+.markup-badge {
+  background: rgba(255, 99, 132, 0.1); color: #FF6384; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600;
 }
 
 .buy-now-btn {

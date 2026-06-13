@@ -154,13 +154,81 @@ export class EditProfileComponent implements OnInit {
     return getLocalNumberPattern(this.selectedPhoneCode);
   }
 
-  onPhotoSelected(event: any): void {
+  async onPhotoSelected(event: any): Promise<void> {
     const file = event.target.files[0];
     if (!file) return;
-    this.selectedPhoto = file;
+
+    // Show preview immediately
     const reader = new FileReader();
     reader.onload = () => { this.user.photo = reader.result as string; };
     reader.readAsDataURL(file);
+
+    try {
+      this.selectedPhoto = await this.compressImage(file, 800, 800, 0.7);
+    } catch (e) {
+      console.warn('Image compression failed, using original file', e);
+      this.selectedPhoto = file;
+    }
+  }
+
+  private compressImage(file: File, maxWidth: number, maxHeight: number, quality: number): Promise<File> {
+    return new Promise((resolve, reject) => {
+      if (typeof document === 'undefined') {
+        resolve(file); // fallback for SSR
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                resolve(file); // fallback
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = (error) => reject(error);
+      };
+      reader.onerror = (error) => reject(error);
+    });
   }
 
   validateForm(): string | null {
@@ -239,8 +307,16 @@ export class EditProfileComponent implements OnInit {
 
       this.saveSuccess = true;
       setTimeout(() => this.router.navigate(['/profile']), 800);
-    } catch (error) {
-      this.saveError = error instanceof Error ? error.message : 'Failed to save profile.';
+    } catch (error: any) {
+      let msg = 'Failed to save profile.';
+      if (error?.error?.errors && Array.isArray(error.error.errors)) {
+        msg = error.error.errors.join(', ');
+      } else if (error?.error?.message) {
+        msg = error.error.message;
+      } else if (error instanceof Error) {
+        msg = error.message;
+      }
+      this.saveError = msg;
     } finally {
       this.isSaving = false;
     }

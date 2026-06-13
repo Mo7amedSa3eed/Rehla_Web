@@ -42,8 +42,8 @@
       No {{ challengeFilter }} challenges found.
     </div>
 
-    <div class="challenge-grid">
-      <article class="challenge-card card" *ngFor="let c of challenges">
+    <ng-template #challengeCard let-c="challenge">
+      <article class="challenge-card card">
         <div class="challenge-header">
           <div>
             <h3>{{ c.title }}</h3>
@@ -61,6 +61,36 @@
           <span class="reward-badge">+{{ c.rewardPoints }} pts</span>
         </div>
       </article>
+    </ng-template>
+
+    <!-- One-Time Challenges -->
+    <div *ngIf="oneTimeChallenges.length > 0" class="challenge-category">
+      <h2 class="category-title">One-Time Challenges</h2>
+      <div class="challenge-grid">
+        <ng-container *ngFor="let c of oneTimeChallenges">
+          <ng-container *ngTemplateOutlet="challengeCard; context: { challenge: c }"></ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Monthly Challenges -->
+    <div *ngIf="monthlyChallenges.length > 0" class="challenge-category">
+      <h2 class="category-title">Monthly Challenges</h2>
+      <div class="challenge-grid">
+        <ng-container *ngFor="let c of monthlyChallenges">
+          <ng-container *ngTemplateOutlet="challengeCard; context: { challenge: c }"></ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Other Challenges -->
+    <div *ngIf="otherChallenges.length > 0" class="challenge-category">
+      <h2 class="category-title" *ngIf="oneTimeChallenges.length > 0 || monthlyChallenges.length > 0">Other Challenges</h2>
+      <div class="challenge-grid">
+        <ng-container *ngFor="let c of otherChallenges">
+          <ng-container *ngTemplateOutlet="challengeCard; context: { challenge: c }"></ng-container>
+        </ng-container>
+      </div>
     </div>
 
     <button class="btn btn-outline load-more-btn" *ngIf="hasMoreChallenges" [disabled]="isLoadingMoreChallenges"
