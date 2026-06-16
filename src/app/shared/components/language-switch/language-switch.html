@@ -1,0 +1,14 @@
+<div class="language-switch" role="group" [attr.aria-label]="'common.language' | t">
+  <button
+    type="button"
+    [class.active]="language.currentLanguage === 'en'"
+    (click)="setLanguage('en')">
+    {{ 'common.english' | t }}
+  </button>
+  <button
+    type="button"
+    [class.active]="language.currentLanguage === 'ar'"
+    (click)="setLanguage('ar')">
+    {{ 'common.arabic' | t }}
+  </button>
+</div>

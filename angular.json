@@ -26,6 +26,7 @@
               "jspdf",
               "html2canvas",
               "canvg",
+              "core-js",
               "qrcode",
               "fflate",
               "dompurify",
@@ -58,7 +59,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
+                  "maximumWarning": "600kB",
                   "maximumError": "1MB"
                 },
                 {

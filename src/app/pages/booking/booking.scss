@@ -42,6 +42,17 @@
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
 }
 
+.page-error {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1px solid #FF6384;
+  border-radius: 8px;
+  background: rgba(255, 99, 132, 0.12);
+  color: #FFD6DF;
+  font-size: 14px;
+  line-height: 20px;
+}
+
 
 .booking-card h3{
   margin-top: 5px;
@@ -195,6 +206,57 @@
   background: #1A3045;
 }
 
+.train-passenger-counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid #1E3A52;
+  border-radius: 12px;
+  background: #0F1B2D;
+}
+
+.train-passenger-counter label {
+  color: #FFFFFF;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+.counter-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.counter-control button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #1E3A52;
+  background: #112240;
+  color: #00E5FF;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.counter-control button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.counter-control span {
+  min-width: 28px;
+  text-align: center;
+  color: #FFFFFF;
+  font-size: 20px;
+  font-weight: 700;
+}
+
 
 .form-row{
   display:flex;
@@ -246,6 +308,19 @@
 .form-group input:focus,
 .form-group select:focus{
   border-color:#00B1DF;
+}
+
+.multi-leg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
 }
 
 
@@ -302,6 +377,11 @@
   .form-row {
     flex-direction: column;
     gap: 16px;
+  }
+
+  .train-passenger-counter {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .form-group {

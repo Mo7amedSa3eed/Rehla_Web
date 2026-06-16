@@ -19,6 +19,17 @@
   color:#8BA0B8;
 }
 
+.page-error {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid #FF6384;
+  border-radius: 8px;
+  background: rgba(255, 99, 132, 0.12);
+  color: #FFD6DF;
+  font-size: 14px;
+  line-height: 20px;
+}
+
 .trips-page{
   padding-top:30px;
 }
@@ -132,6 +143,8 @@
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .seats{
@@ -157,6 +170,42 @@
 
 .select-btn:hover{
   opacity: 0.9;
+}
+
+.select-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.class-select-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #8BA0B8;
+  font-size: 13px;
+  font-family: inherit;
+
+  span {
+    font-weight: 700;
+    color: #FFFFFF;
+  }
+
+  select {
+    max-width: min(360px, 58vw);
+    background: #0F1B2D;
+    border: 1px solid #1E3A52;
+    border-radius: 8px;
+    color: #FFFFFF;
+    padding: 9px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: #00E5FF;
+    }
+  }
 }
 
 /* ===== Layout Structure ===== */

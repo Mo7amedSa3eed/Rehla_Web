@@ -1,5 +1,10 @@
 <div class="welcome-container">
+  <div class="page-language-switch">
+    <app-language-switch></app-language-switch>
+  </div>
+
   <div class="animated-background">
+    <div class="orb orb-1"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
@@ -8,42 +13,42 @@
   <section class="hero-section">
     <div class="hero-content">
       <div class="badge-glass">
-        <span class="pulse-dot"></span> Next-Gen Travel Experience
+        <span class="pulse-dot"></span> {{ 'Next-Gen Travel Experience' | t }}
       </div>
       <h1 class="hero-title">
-        The world is yours.<br>
-        <span class="text-gradient">Book it in seconds.</span>
+        {{ 'The world is yours' | t }}<br>
+        <span class="text-gradient">{{ 'Book it in seconds' | t }}</span>
       </h1>
       <p class="hero-subtitle">
-        Say goodbye to stressful planning. Rihla intelligently unifies your bookings, wallets, and resale tickets in one ultra-fast, premium platform.
+        {{ 'Say goodbye to stressful planning Rihla intelligently unifies your bookings, wallets, and resale tickets in one ultra-fast, premium platform' | t }}
       </p>
 
       <div class="hero-actions">
         <a class="btn-glow" routerLink="/signup">
-          <span>Start your journey</span>
+          <span>{{ 'Start your journey' | t }}</span>
           <span class="arrow">→</span>
         </a>
-        <a class="btn-glass" routerLink="/login">Sign in</a>
+        <a class="btn-glass" routerLink="/login">{{ 'Sign in' | t }}</a>
       </div>
     </div>
 
     <div class="hero-visual">
       <div class="floating-card primary-card">
         <div class="card-header">
-          <span class="route-tag">Trending</span>
+          <span class="route-tag">{{ 'Trending' | t }}</span>
           <div class="price-tag">120 EGP</div>
         </div>
         <div class="route-info">
-          <div class="city">Alexandria</div>
+          <div class="city">{{ 'Alexandria' | t }}</div>
           <div class="route-divider">
             <span class="line"></span>
             <span class="icon-train">🚆</span>
             <span class="line"></span>
           </div>
-          <div class="city">Cairo</div>
+          <div class="city">{{ 'Cairo' | t }}</div>
         </div>
         <div class="card-footer">
-          <div class="time">Just 2h 30m away</div>
+          <div class="time">{{ 'Just 2h 30m away' | t }}</div>
         </div>
       </div>
 
@@ -53,19 +58,19 @@
           <span class="wallet-balance">850 EGP</span>
         </div>
         <div class="card-body">
-          <div class="text-sm">Secure Wallet</div>
-          <div class="text-xs">Instant 1-click checkout</div>
+          <div class="text-sm">{{ 'Secure Wallet' | t }}</div>
+          <div class="text-xs">{{ 'Instant 1-click checkout' | t }}</div>
         </div>
       </div>
       
       <div class="floating-card tertiary-card">
          <div class="card-header">
           <div class="ticket-icon">🎫</div>
-          <span class="status-tag">Listed</span>
+          <span class="status-tag">{{ 'Listed' | t }}</span>
         </div>
         <div class="card-body">
-          <div class="text-sm">Smart Resale</div>
-          <div class="text-xs">Sold in 12 mins</div>
+          <div class="text-sm">{{ 'Smart Resale' | t }}</div>
+          <div class="text-xs">{{ 'Sold in 12 mins' | t }}</div>
         </div>
       </div>
     </div>
@@ -74,18 +79,18 @@
   <section class="features-section">
     <div class="feature-card">
       <div class="feature-icon glow-blue">⚡</div>
-      <h3>Lightning Fast</h3>
-      <p>Live schedules updated in real-time. Never miss a train again.</p>
+      <h3>{{ 'Lightning Fast' | t }}</h3>
+      <p>{{ 'Live schedules updated in real-time Never miss a train again' | t }}</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon glow-cyan">🔒</div>
-      <h3>Ultra Secure</h3>
-      <p>Bank-grade encryption for your wallet and instant checkouts.</p>
+      <h3>{{ 'Ultra Secure' | t }}</h3>
+      <p>{{ 'Bank-grade encryption for your wallet and instant checkouts' | t }}</p>
     </div>
     <div class="feature-card">
       <div class="feature-icon glow-purple">🔄</div>
-      <h3>Smart Resale</h3>
-      <p>Plans changed? Flip your ticket on the marketplace instantly.</p>
+      <h3>{{ 'Smart Resale' | t }}</h3>
+      <p>{{ 'Plans changed? Flip your ticket on the marketplace instantly' | t }}</p>
     </div>
   </section>
 </div>

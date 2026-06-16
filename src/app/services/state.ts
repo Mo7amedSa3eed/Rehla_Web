@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import {
   ActiveCartDto,
+  AddToCartRequest,
   ApiService,
   CartItemDto,
   AuthUserDto,
@@ -15,6 +16,7 @@ import {
   UserProfileDto,
 } from './api';
 import { buildE164Number } from '../shared/phone-codes';
+import { AppLanguage, LanguageService } from '../core/i18n/language.service';
 
 export interface UserProfile {
   userId: number;
@@ -44,6 +46,36 @@ export interface UserProfile {
   activeChallenges: { challengeId: number; title: string; currentProgress: number; goalValue: number; rewardPoints: number; isCompleted?: boolean }[];
 }
 
+export function createEmptyUserProfile(): UserProfile {
+  return {
+    userId: 0,
+    firstName: '',
+    familyName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    dob: '',
+    gender: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    countryCode: '',
+    memberSince: '',
+    photo: null,
+    totalTrips: 0,
+    totalDistanceTraveled: 0,
+    walletBalance: 0,
+    loyaltyPointsBalance: 0,
+    expiringPointsAmount: 0,
+    nextExpiryDate: null,
+    hasSetIdentityDetails: false,
+    idType: null,
+    idNumber: null,
+    activeChallenges: [],
+  };
+}
+
 export interface UiTrip {
   id: number;
   tripOccurrenceId: number;
@@ -62,11 +94,15 @@ export interface UiTrip {
   departureTime: string;
   arrivalTime: string;
   duration: string;
-  transport: string;
+  transport: string | number;
   agencyName: string;
+  rawAgencyName?: string;
   price: number;
   seats: number;
   availableClasses: TripClassDto[];
+  selectedFloorNumber?: number | null;
+  selectedSeatType?: string;
+  selectedSeats?: string[];
   routeStops: RouteStopDto[];
   showStops?: boolean;
 }
@@ -83,7 +119,8 @@ export interface UiBooking {
   passengers: number;
   price: number;
   originalPrice?: number;
-  status: 'pending' | 'confirmed' | 'pending-sale' | 'sold' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'completed' | 'pending-sale' | 'sold' | 'cancelled';
+  rawStatus?: string;
   seat: string;
   canResell?: boolean;
   className?: string;
@@ -119,6 +156,13 @@ export interface PassengerDraft {
   email: string;
 }
 
+export class DirectBookingError extends Error {
+  constructor(message: string, public readonly cartAdded: boolean) {
+    super(message);
+    this.name = 'DirectBookingError';
+  }
+}
+
 export interface MarketplaceListing {
   listingId: number;
   ticketId: number;
@@ -144,38 +188,28 @@ export interface MarketplaceListing {
   providedIn: 'root'
 })
 export class AppStateService {
+  private profileLoadPromise: Promise<void> | null = null;
+  private activeCartLoadPromise: Promise<ActiveCartDto | null> | null = null;
+  private lastSearchResultItems: TripSearchItemDto[] = [];
+  private lastBookingsCart: ActiveCartDto | null = null;
+  private lastBookingTickets: TicketDto[] = [];
+  private lastMyTicketDtos: TicketDto[] = [];
+  private lastMarketplaceResult: MarketplaceActiveListingsDto | null = null;
+  private lastUserProfileDto: UserProfileDto | null = null;
+
   constructor(
     private readonly api: ApiService,
+    private readonly language: LanguageService,
     @Inject(PLATFORM_ID) private readonly platformId: object,
-  ) { }
+  ) {
+    this.language.language$.subscribe(() => this.refreshLocalizedState());
+  }
 
-  userProfile: UserProfile = {
-    userId: 0,
-    firstName: 'Mohamed',
-    familyName: '',
-    lastName: 'Saeed',
-    email: 'mo7amedsa3eed@gmail.com',
-    phone: '',
-    dob: '',
-    gender: '',
-    address: '',
-    city: '',
-    state: '',
-    country: '',
-    countryCode: '',
-    memberSince: '2025-12-24',
-    photo: null as string | null,
-    totalTrips: 12,
-    totalDistanceTraveled: 0,
-    walletBalance: 0,
-    loyaltyPointsBalance: 0,
-    expiringPointsAmount: 0,
-    nextExpiryDate: null,
-    hasSetIdentityDetails: false,
-    idType: null,
-    idNumber: null,
-    activeChallenges: [],
-  };
+  userProfile: UserProfile = createEmptyUserProfile();
+  isProfileLoaded = false;
+  isProfileLoading = false;
+  profileLoadError = '';
+  hasLoadedActiveCart = false;
 
   // Transport of the last search (1=bus,2=train)
   lastSearchTransport: number | null = null;
@@ -185,6 +219,8 @@ export class AppStateService {
 
   updateUserProfile(updated: UserProfile) {
     this.userProfile = { ...updated };
+    this.isProfileLoaded = true;
+    this.profileLoadError = '';
   }
 
   applyAuthUserProfile(user: AuthUserDto): void {
@@ -196,6 +232,39 @@ export class AppStateService {
       country: user.countryName,
       photo: this.api.resolveProfilePictureUrl(user.profilePictureUrl),
     };
+  }
+
+  resetProfile(): void {
+    this.userProfile = createEmptyUserProfile();
+    this.isProfileLoaded = false;
+    this.isProfileLoading = false;
+    this.profileLoadError = '';
+  }
+
+  resetSessionState(): void {
+    this.resetProfile();
+    this.bookings = [];
+    this.myTickets = [];
+    this.marketplace = [];
+    this.localPendingBookings = [];
+    this.localConfirmedBookings = [];
+    this.walletHistory = [];
+    this.activeCart = null;
+    this.hasLoadedActiveCart = false;
+    this.activeCartLoadPromise = null;
+    this.lastSearchResultItems = [];
+    this.lastBookingsCart = null;
+    this.lastBookingTickets = [];
+    this.lastMyTicketDtos = [];
+    this.lastMarketplaceResult = null;
+    this.lastUserProfileDto = null;
+    this.currentPaymentBooking = null;
+    this.buyingMarketplaceTicketId = null;
+    this.selectedTicket = null;
+    this.selectedSeats = [];
+    this.selectedLegs = [];
+    this.pendingPassengers = [];
+    this.currentLegIndex = 0;
   }
 
   bookings: UiBooking[] = [];
@@ -261,7 +330,8 @@ export class AppStateService {
       }),
     );
 
-    this.searchResults = primaryResult.items.map((trip) => this.mapTripToUi(trip));
+    this.lastSearchResultItems = primaryResult.items ?? [];
+    this.searchResults = this.lastSearchResultItems.map((trip) => this.mapTripToUi(trip));
     this.searchTripsCurrentPage = primaryResult.currentPage || 1;
     this.searchTripsTotalPages = primaryResult.totalPages || 1;
 
@@ -282,7 +352,8 @@ export class AppStateService {
         : primaryResult;
 
     this.searchPassengers = criteria.passengers;
-    this.searchResults = result.items.map((trip) => this.mapTripToUi(trip));
+    this.lastSearchResultItems = result.items ?? [];
+    this.searchResults = this.lastSearchResultItems.map((trip) => this.mapTripToUi(trip));
   }
 
   async searchIndirectTrips(criteria: any): Promise<void> {
@@ -314,20 +385,83 @@ export class AppStateService {
       return;
     }
 
-    // Clean up any abandoned items in the cart before adding new ones
-    try {
-      const currentCart = await this.loadCartSafe();
-      if (currentCart && currentCart.items && currentCart.items.length > 0) {
-        await Promise.all(currentCart.items.map(item =>
-          firstValueFrom(this.api.cancelCartHold(item.bookingId)).catch(() => {})
-        ));
+    await this.cleanupActiveCartHolds();
+
+    const failures: string[] = [];
+
+    for (const payload of this.buildSelectedLegCartPayloads()) {
+      try {
+        await firstValueFrom(this.api.addToCart(payload));
+      } catch (error) {
+        failures.push(this.api.formatError(error, 'Failed to add leg to cart'));
       }
-    } catch (e) {
-      console.warn('Failed to clean up old cart items', e);
     }
 
+    if (failures.length) {
+      throw new Error([...new Set(failures)].join(', '));
+    }
+
+    this.clearSelectedBookingState();
+
+    await this.loadBookings();
+  }
+
+  async bookSelectedLegsNow(pointsToRedeem = 0): Promise<void> {
+    if (!this.isBrowser() || this.selectedLegs.length === 0) {
+      return;
+    }
+
+    await this.cleanupActiveCartHolds();
+    const payloads = this.buildSelectedLegCartPayloads();
+    let cartAdded = false;
+
+    try {
+      for (const payload of payloads) {
+        await firstValueFrom(this.api.addToCart(payload));
+      }
+      cartAdded = true;
+
+      await firstValueFrom(this.api.checkout({
+        paymentMethod: 'Wallet',
+        pointsToRedeem: Math.max(0, Math.floor(pointsToRedeem || 0)),
+      }));
+
+      this.clearSelectedBookingState();
+      await Promise.all([
+        this.loadBookings(),
+        this.loadTickets(),
+        this.loadProfile().catch(() => undefined),
+      ]);
+      this.currentPaymentBooking = null;
+      this.buyingMarketplaceTicketId = null;
+    } catch (error) {
+      await this.loadBookings().catch(() => undefined);
+
+      if (cartAdded) {
+        const message = this.api.formatError(error, 'Checkout failed');
+        throw new DirectBookingError(`Trips were added to cart, but checkout failed. ${message}`, true);
+      }
+
+      throw new DirectBookingError(this.api.formatError(error, 'Failed to add trips to cart'), false);
+    }
+  }
+
+  private async cleanupActiveCartHolds(): Promise<void> {
+    try {
+      const currentCart = await this.loadCartSafe();
+      if (currentCart?.items?.length) {
+        await Promise.all(currentCart.items.map((item) =>
+          firstValueFrom(this.api.cancelCartHold(item.bookingId)).catch(() => undefined),
+        ));
+      }
+    } catch (error) {
+      console.warn('Failed to clean up old cart items', error);
+    }
+  }
+
+  private buildSelectedLegCartPayloads(): AddToCartRequest[] {
     const draftPassengers =
-      this.pendingPassengers.length === this.searchPassengers
+      this.pendingPassengers.length >= this.searchPassengers
         ? this.pendingPassengers
         : [];
 
@@ -341,46 +475,42 @@ export class AppStateService {
       : this.userProfile.phone || '+201000000000';
     const contactEmail = primaryPassenger?.email?.trim() || this.userProfile.email || 'guest@example.com';
 
-    for (const leg of this.selectedLegs) {
-      try {
-        const isTrain = this.isTrainTrip(leg.agencyName, leg.transport);
+    return this.selectedLegs.map((leg) => {
+      const isTrain = this.isTrainTrip(leg.rawAgencyName ?? leg.agencyName, leg.transport);
+      const legPassengerCount = isTrain
+        ? Math.max(1, this.searchPassengers)
+        : Math.max(1, leg.selectedSeats?.length ?? 0);
 
-        await firstValueFrom(
-          this.api.addToCart({
-            tripOccurrenceId: leg.tripOccurrenceId,
-            coachClassId: leg.coachClassId,
-            originStationId: leg.originStationId,
-            destinationStationId: leg.destinationStationId,
-            contactName,
-            contactPhone,
-            contactEmail,
-            passengers: draftPassengers.map((passenger, index) => {
-              const payload: any = {
-                passengerName: passenger?.fullName?.trim() || `Passenger ${index + 1}`,
-                seatNumber: isTrain ? `T-${index + 1}` : (leg.selectedSeats?.[index] || ''),
-              };
-              if (isTrain) {
-                payload.idType = passenger?.idType || 'NationalId';
-                payload.idNumber = passenger?.nationalId?.trim() || 'N/A';
-              }
-              return payload;
-            }),
-          }),
-        );
-      } catch {
-        // Fallback for local bookings handled separately if needed
-        console.error('Failed to add leg to cart', leg);
-      }
-    }
+      return {
+        tripOccurrenceId: leg.tripOccurrenceId,
+        coachClassId: leg.coachClassId,
+        originStationId: leg.originStationId,
+        destinationStationId: leg.destinationStationId,
+        contactName,
+        contactPhone,
+        contactEmail,
+        passengers: draftPassengers.slice(0, legPassengerCount).map((passenger, index) => {
+          const payload: AddToCartRequest['passengers'][number] = {
+            passengerName: passenger?.fullName?.trim() || `Passenger ${index + 1}`,
+            seatNumber: isTrain ? `T-${index + 1}` : (leg.selectedSeats?.[index] || ''),
+          };
+          if (isTrain) {
+            payload.idType = passenger?.idType || 'NationalId';
+            payload.idNumber = passenger?.nationalId?.trim() || 'N/A';
+          }
+          return payload;
+        }),
+      };
+    });
+  }
 
+  private clearSelectedBookingState(): void {
     this.selectedLegs = [];
     this.selectedSeats = [];
     this.pendingPassengers = [];
     this.currentLegIndex = 0;
     this.searchQueries = [];
     this.searchType = 'oneway';
-
-    await this.loadBookings();
   }
 
   async addTripToCart(trip: UiTrip): Promise<void> {
@@ -390,7 +520,9 @@ export class AppStateService {
 
     try {
       const seatMap = await firstValueFrom(this.api.getSeatMap(trip.tripOccurrenceId));
-      const preferredClass = seatMap.classes.find((item) => item.remainingSeats >= this.searchPassengers);
+      const preferredClass = seatMap.classes.find((item) =>
+        item.coachClassId === trip.coachClassId && item.remainingSeats >= this.searchPassengers
+      );
 
       if (!preferredClass) {
         throw new Error('Not enough available seats for selected trip.');
@@ -428,12 +560,12 @@ export class AppStateService {
         : this.userProfile.phone || '+201000000000';
       const contactEmail = primaryPassenger?.email?.trim() || this.userProfile.email || 'guest@example.com';
 
-      const isTrain = this.isTrainTrip(trip.agencyName, trip.transport);
+      const isTrain = this.isTrainTrip(trip.rawAgencyName ?? trip.agencyName, trip.transport);
 
       await firstValueFrom(
         this.api.addToCart({
           tripOccurrenceId: trip.tripOccurrenceId,
-          coachClassId: preferredClass.coachClassId,
+          coachClassId: trip.coachClassId,
           originStationId: trip.originStationId,
           destinationStationId: trip.destinationStationId,
           contactName,
@@ -473,6 +605,8 @@ export class AppStateService {
 
     const [cart, tickets] = await Promise.all([this.loadCartSafe(), this.loadTicketsSafe()]);
     this.activeCart = cart;
+    this.lastBookingsCart = cart;
+    this.lastBookingTickets = tickets;
     const pending = (cart?.items ?? []).map((item) => this.mapCartItemToUiBooking(item));
     const offlinePending = this.localPendingBookings.filter(b => b.id < 0);
     this.localPendingBookings = [...pending, ...offlinePending];
@@ -490,29 +624,12 @@ export class AppStateService {
       return;
     }
 
-    const targetBookingId = this.currentPaymentBooking?.id;
-
-    try {
-      await firstValueFrom(this.api.checkoutWallet());
-      if (typeof targetBookingId === 'number') {
-        this.markBookingConfirmed(targetBookingId);
-      } else {
-        this.confirmCartItems();
-      }
-      await this.loadBookings();
-      await this.loadTickets();
-      if (typeof this.buyingMarketplaceTicketId === 'number') {
-        await firstValueFrom(this.api.buyMarketplaceTicket(this.buyingMarketplaceTicketId));
-        await this.loadMarketplace().catch(() => undefined);
-      }
-    } catch {
-      if (typeof targetBookingId === 'number') {
-        this.confirmLocalBooking(targetBookingId);
-      } else {
-        this.confirmCartItems();
-      }
-      await this.loadBookings();
-      await this.loadTickets();
+    await firstValueFrom(this.api.checkout({ paymentMethod: 'Wallet', pointsToRedeem: 0 }));
+    await this.loadBookings();
+    await this.loadTickets();
+    if (typeof this.buyingMarketplaceTicketId === 'number') {
+      await firstValueFrom(this.api.buyMarketplaceTicket(this.buyingMarketplaceTicketId));
+      await this.loadMarketplace().catch(() => undefined);
     }
 
     this.currentPaymentBooking = null;
@@ -524,27 +641,13 @@ export class AppStateService {
       return;
     }
 
-    const targetBookingId = this.currentPaymentBooking?.id;
-
-    try {
-      await firstValueFrom(this.api.checkoutPoints(pointsToRedeem));
-      if (typeof targetBookingId === 'number') {
-        this.markBookingConfirmed(targetBookingId);
-      } else {
-        this.confirmCartItems();
-      }
-      await this.loadBookings();
-      await this.loadTickets();
-      await this.loadProfile().catch(() => undefined);
-    } catch {
-      if (typeof targetBookingId === 'number') {
-        this.confirmLocalBooking(targetBookingId);
-      } else {
-        this.confirmCartItems();
-      }
-      await this.loadBookings();
-      await this.loadTickets();
-    }
+    await firstValueFrom(this.api.checkout({
+      paymentMethod: 'Wallet',
+      pointsToRedeem: Math.max(0, Math.floor(pointsToRedeem || 0)),
+    }));
+    await this.loadBookings();
+    await this.loadTickets();
+    await this.loadProfile().catch(() => undefined);
 
     this.currentPaymentBooking = null;
     this.buyingMarketplaceTicketId = null;
@@ -597,6 +700,7 @@ export class AppStateService {
     }
 
     const result = await firstValueFrom(this.api.getMarketplaceListings(params));
+    this.lastMarketplaceResult = result;
     this.marketplace = this.mapMarketplaceToUi(result);
     this.isMarketplaceLoaded = true;
   }
@@ -696,7 +800,8 @@ export class AppStateService {
       return;
     }
 
-    const tickets = await this.loadTicketsSafe();
+    const tickets = await firstValueFrom(this.api.getMyTickets());
+    this.lastMyTicketDtos = tickets;
     this.myTickets = this.mergeBookings([
       ...tickets.map((ticket) => this.mapTicketToUiBooking(ticket)),
       ...this.localConfirmedBookings,
@@ -708,10 +813,70 @@ export class AppStateService {
       return;
     }
 
-    const profile = await firstValueFrom(this.api.getMyProfile());
-    this.userProfile = this.mapProfileToUi(profile);
+    if (this.profileLoadPromise) {
+      return this.profileLoadPromise;
+    }
+
+    this.profileLoadPromise = this.fetchProfile();
+    try {
+      await this.profileLoadPromise;
+    } finally {
+      this.profileLoadPromise = null;
+    }
   }
 
+  async ensureProfileLoaded(): Promise<void> {
+    if (this.isProfileLoaded) {
+      return;
+    }
+
+    await this.loadProfile();
+  }
+
+  private async fetchProfile(): Promise<void> {
+    this.isProfileLoading = true;
+    this.profileLoadError = '';
+
+    try {
+      const profile = await firstValueFrom(this.api.getMyProfile());
+      this.lastUserProfileDto = profile;
+      this.userProfile = this.mapProfileToUi(profile);
+      this.isProfileLoaded = true;
+      this.profileLoadError = '';
+    } catch (error) {
+      this.profileLoadError = this.api.formatError(error, 'Could not load your profile. Please try again.');
+      throw error;
+    } finally {
+      this.isProfileLoading = false;
+    }
+  }
+
+  async loadActiveCart(): Promise<ActiveCartDto | null> {
+    if (!this.isBrowser()) {
+      return null;
+    }
+
+    if (this.activeCartLoadPromise) {
+      return this.activeCartLoadPromise;
+    }
+
+    this.activeCartLoadPromise = firstValueFrom(this.api.getActiveCart());
+    try {
+      this.activeCart = await this.activeCartLoadPromise;
+      this.hasLoadedActiveCart = true;
+      return this.activeCart;
+    } finally {
+      this.activeCartLoadPromise = null;
+    }
+  }
+
+  async ensureActiveCartLoaded(): Promise<void> {
+    if (this.hasLoadedActiveCart) {
+      return;
+    }
+
+    await this.loadActiveCart();
+  }
 
   async saveProfile(profile: {
     firstName: string;
@@ -773,7 +938,7 @@ export class AppStateService {
   }
 
   private async loadCartSafe(): Promise<ActiveCartDto | null> {
-    return firstValueFrom(this.api.getActiveCart()).catch(() => null);
+    return this.loadActiveCart().catch(() => null);
   }
 
   private async loadTicketsSafe(): Promise<TicketDto[]> {
@@ -781,11 +946,19 @@ export class AppStateService {
   }
 
   private extractLocation(obj1: any, obj2: any, prefix: 'origin' | 'destination'): string {
-    const keys = [
+    const englishKeys = [
       `${prefix}GovEn`, `${prefix}GovernorateEn`, `${prefix}Gov`, `${prefix}Governorate`,
       `${prefix}StationNameEn`, `${prefix}StationEn`, `${prefix}StationName`, `${prefix}Station`,
       `${prefix}Name`, `${prefix}`
     ];
+    const arabicKeys = [
+      `${prefix}GovAr`, `${prefix}GovernorateAr`, `${prefix}StationNameAr`, `${prefix}StationAr`,
+      `${prefix}NameAr`, `${prefix}Ar`
+    ];
+    const keys = this.language.currentLanguage === 'ar'
+      ? [...arabicKeys, ...englishKeys]
+      : englishKeys;
+
     for (const obj of [obj1, obj2]) {
       if (!obj) continue;
       for (const k of keys) {
@@ -798,90 +971,142 @@ export class AppStateService {
   }
 
   private mapTripToUi(trip: TripSearchItemDto): UiTrip {
-    const firstClass = trip.availableClasses[0];
+    const firstClass = this.firstAvailableClass(trip.availableClasses);
+    const transportType = this.extractTransportType(trip);
     const boardingDate = new Date(trip.boardingTime);
     const dropoffDate = new Date(trip.dropoffTime);
     const departureDate = new Date(trip.departureTime);
     const arrivalDate = new Date(trip.arrivalTime);
+    const locale = this.language.currentLocale;
+    const isArabic = this.language.currentLanguage === 'ar';
+    const className = this.localizedField(firstClass, isArabic, {
+      keys: ['className', 'name'],
+      arabicKeys: ['classNameAr', 'nameAr'],
+      fallback: 'N/A',
+    });
+    const agencyName = this.localizedField(trip, isArabic, {
+      keys: ['agencyName'],
+      arabicKeys: ['agencyNameAr', 'agencyAr'],
+      fallback: trip.agencyName,
+    });
 
     return {
       id: trip.tripOccurrenceId,
       tripOccurrenceId: trip.tripOccurrenceId,
       tripId: trip.tripId,
       coachClassId: firstClass?.coachClassId ?? 0,
-      className: firstClass?.className ?? 'N/A',
+      className,
       originStationId: trip.originStationId,
       originStationName: trip.originStationName,
       destinationStationId: trip.destinationStationId,
       destinationStationName: trip.destinationStationName,
       from: this.extractLocation(trip, null, 'origin'),
       to: this.extractLocation(trip, null, 'destination'),
-      date: boardingDate.toLocaleDateString('en-US', {
+      date: boardingDate.toLocaleDateString(locale, {
         month: 'short',
         day: '2-digit',
         year: 'numeric',
       }),
-      time: boardingDate.toLocaleTimeString('en-US', {
+      time: boardingDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
       }),
-      dropoffTime: dropoffDate.toLocaleTimeString('en-US', {
+      dropoffTime: dropoffDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
       }),
-      departureTime: departureDate.toLocaleTimeString('en-US', {
+      departureTime: departureDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
       }),
-      arrivalTime: arrivalDate.toLocaleTimeString('en-US', {
+      arrivalTime: arrivalDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
       }),
       duration: this.formatDuration(trip.totalDurationMinutes),
-      transport: trip.agencyName,
-      agencyName: trip.agencyName,
-      price: trip.startingPrice,
+      transport: transportType ?? agencyName,
+      agencyName,
+      rawAgencyName: trip.agencyName,
+      price: firstClass?.price ?? trip.startingPrice,
       seats: firstClass?.remainingSeats ?? 0,
       availableClasses: trip.availableClasses ?? [],
+      selectedFloorNumber: this.extractFloorNumber(firstClass?.className ?? className),
+      selectedSeatType: this.extractSeatType(firstClass?.className ?? className),
       routeStops: trip.routeStops ?? [],
     };
   }
 
+  private extractTransportType(trip: TripSearchItemDto): string | number | null {
+    const rawTrip = trip as TripSearchItemDto & {
+      transport?: string | number | null;
+      transportType?: string | number | null;
+    };
+
+    return rawTrip.transportType ?? rawTrip.transport ?? null;
+  }
+
+  private firstAvailableClass(classes: TripClassDto[] | null | undefined): TripClassDto | undefined {
+    return (classes ?? []).find((item) => item.remainingSeats > 0) ?? classes?.[0];
+  }
+
+  private extractFloorNumber(className: string): number | null {
+    const match = /(?:floor|deck|level)\s*(\d+)/i.exec(className);
+    return match ? Number(match[1]) : null;
+  }
+
+  private extractSeatType(className: string): string {
+    const floorMatch = /floor\s*\d+\s+(\w+)/i.exec(className);
+    if (floorMatch) return floorMatch[1];
+
+    const parts = className.trim().split(/[\s-]+/).filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : className;
+  }
+
   private mapCartItemToUiBooking(item: CartItemDto): UiBooking {
-    const boardingDate = new Date(item.boardingTime);
-    const dropoffDate = new Date(item.dropoffTime);
+    const boardingDate = item.boardingTime ? new Date(item.boardingTime) : null;
+    const dropoffDate = item.dropoffTime ? new Date(item.dropoffTime) : null;
+    const locale = this.language.currentLocale;
+    const isArabic = this.language.currentLanguage === 'ar';
 
     return {
       id: item.bookingId,
       ticketId: item.bookingId,
       from: this.extractLocation(item, null, 'origin'),
       to: this.extractLocation(item, null, 'destination'),
-      date: boardingDate.toLocaleDateString('en-US', {
+      date: boardingDate ? boardingDate.toLocaleDateString(locale, {
         month: 'short',
         day: '2-digit',
         year: 'numeric',
-      }),
-      time: boardingDate.toLocaleTimeString('en-US', {
+      }) : '',
+      time: boardingDate ? boardingDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
-      }),
-      duration: this.durationFromTimes(item.boardingTime, item.dropoffTime),
+      }) : '',
+      duration: item.boardingTime && item.dropoffTime ? this.durationFromTimes(item.boardingTime, item.dropoffTime) : '',
       passengers: item.seatsBooked,
       price: item.totalPrice,
       originalPrice: item.totalPrice,
       status: 'pending',
-      seat: item.passengers.map((passenger) => passenger.seatNumber).join(', '),
-      className: item.className,
-      agencyName: item.agencyName,
-      arrivalDate: dropoffDate.toLocaleDateString('en-US', {
+      seat: (item.passengers ?? []).map((passenger) => passenger.seatNumber || '').filter(Boolean).join(', '),
+      className: this.localizedField(item, isArabic, {
+        keys: ['className'],
+        arabicKeys: ['classNameAr'],
+        fallback: item.className || '',
+      }),
+      agencyName: this.localizedField(item, isArabic, {
+        keys: ['agencyName'],
+        arabicKeys: ['agencyNameAr'],
+        fallback: item.agencyName || '',
+      }),
+      arrivalDate: dropoffDate ? dropoffDate.toLocaleDateString(locale, {
         month: 'short',
         day: '2-digit',
         year: 'numeric',
-      }),
-      arrivalTime: dropoffDate.toLocaleTimeString('en-US', {
+      }) : '',
+      arrivalTime: dropoffDate ? dropoffDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
-      }),
+      }) : '',
     };
   }
 
@@ -889,6 +1114,8 @@ export class AppStateService {
     const boardingDate = new Date(ticket.boardingTime);
     const dropoffDate = new Date(ticket.dropoffTime);
     const normalizedStatus = ticket.status?.toLowerCase();
+    const locale = this.language.currentLocale;
+    const isArabic = this.language.currentLanguage === 'ar';
 
     const isRefundAccepted = ticket.refundStatus === 'Accepted' || ticket.refundStatus === 'Approved';
 
@@ -896,6 +1123,8 @@ export class AppStateService {
       ? 'cancelled'
       : normalizedStatus === 'confirmed'
         ? (ticket.isOfferedForResale ? 'pending-sale' : 'confirmed')
+        : normalizedStatus === 'completed'
+          ? 'completed'
         : normalizedStatus === 'pending-sale'
           ? 'pending-sale'
           : normalizedStatus === 'sold'
@@ -919,12 +1148,12 @@ export class AppStateService {
       ownerId: ticket.ownerId,
       from: this.extractLocation(ticket, null, 'origin'),
       to: this.extractLocation(ticket, null, 'destination'),
-      date: boardingDate.toLocaleDateString('en-US', {
+      date: boardingDate.toLocaleDateString(locale, {
         month: 'short',
         day: '2-digit',
         year: 'numeric',
       }),
-      time: boardingDate.toLocaleTimeString('en-US', {
+      time: boardingDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
       }),
@@ -933,16 +1162,25 @@ export class AppStateService {
       price: ticket.totalPrice,
       originalPrice: ticket.totalPrice,
       status,
+      rawStatus: ticket.status,
       seat: ticket.passengers.map((passenger) => passenger.seatNumber).join(', '),
       canResell,
-      className: ticket.className,
-      agencyName: ticket.agencyName,
-      arrivalDate: dropoffDate.toLocaleDateString('en-US', {
+      className: this.localizedField(ticket, isArabic, {
+        keys: ['className'],
+        arabicKeys: ['classNameAr'],
+        fallback: ticket.className,
+      }),
+      agencyName: this.localizedField(ticket, isArabic, {
+        keys: ['agencyName'],
+        arabicKeys: ['agencyNameAr'],
+        fallback: ticket.agencyName,
+      }),
+      arrivalDate: dropoffDate.toLocaleDateString(locale, {
         month: 'short',
         day: '2-digit',
         year: 'numeric',
       }),
-      arrivalTime: dropoffDate.toLocaleTimeString('en-US', {
+      arrivalTime: dropoffDate.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
       }),
@@ -965,9 +1203,9 @@ export class AppStateService {
       destinationGovernorateAr: ticket.destinationGovernorateAr,
       passengerList: ticket.passengers.map((p) => ({
         passengerId: p.passengerId,
-        name: p.name,
-        idNumber: p.idNumber,
-        seatNumber: p.seatNumber,
+        name: p.name || p.passengerName || '',
+        idNumber: p.idNumber || '',
+        seatNumber: p.seatNumber || '',
       })),
     };
   }
@@ -1057,6 +1295,8 @@ export class AppStateService {
   }
 
   private mapProfileToUi(profile: UserProfileDto): UserProfile {
+    const isArabic = this.language.currentLanguage === 'ar';
+
     return {
       userId: profile.userId,
       firstName: profile.firstName,
@@ -1069,7 +1309,11 @@ export class AppStateService {
       address: '',
       city: '',
       state: '',
-      country: profile.countryName,
+      country: this.localizedField(profile, isArabic, {
+        keys: ['countryName'],
+        arabicKeys: ['countryNameAr'],
+        fallback: profile.countryName,
+      }),
       countryCode: profile.countryCode,
       photo: this.api.resolveProfilePictureUrl(profile.profilePictureUrl),
       memberSince: '',
@@ -1084,7 +1328,11 @@ export class AppStateService {
       idNumber: profile.idNumber ?? null,
       activeChallenges: (profile.activeChallenges ?? []).map(c => ({
         challengeId: c.challengeId,
-        title: c.title,
+        title: this.localizedField(c, isArabic, {
+          keys: ['title'],
+          arabicKeys: ['titleAr'],
+          fallback: c.title,
+        }),
         currentProgress: c.currentProgress,
         goalValue: c.goalValue,
         rewardPoints: c.rewardPoints,
@@ -1126,19 +1374,21 @@ export class AppStateService {
   }
 
   private mapMarketplaceToUi(result: MarketplaceActiveListingsDto): MarketplaceListing[] {
-    const isArabic = false; // Add i18n logic here if implemented later
+    const activeLanguage = this.getActiveLanguage();
+    const isArabic = activeLanguage === 'ar';
+    const activeLocale = isArabic ? 'ar-EG' : 'en-US';
 
     return (result.items ?? []).map((listing) => {
       const trip = listing.tripDetails ?? {};
       const time = trip.time ? new Date(trip.time) : new Date();
 
-      const dateLabel = time.toLocaleDateString('en-US', {
+      const dateLabel = time.toLocaleDateString(activeLocale, {
         month: 'short',
         day: '2-digit',
         year: 'numeric',
       });
 
-      const timeLabel = time.toLocaleTimeString('en-US', {
+      const timeLabel = time.toLocaleTimeString(activeLocale, {
         hour: '2-digit',
         minute: '2-digit',
       });
@@ -1212,6 +1462,43 @@ export class AppStateService {
     });
   }
 
+  private getActiveLanguage(): AppLanguage {
+    return this.language.currentLanguage;
+  }
+
+  private refreshLocalizedState(): void {
+    if (this.lastUserProfileDto) {
+      this.userProfile = this.mapProfileToUi(this.lastUserProfileDto);
+    }
+
+    if (this.lastSearchResultItems.length) {
+      this.searchResults = this.lastSearchResultItems.map((trip) => this.mapTripToUi(trip));
+    }
+
+    if (this.lastBookingsCart || this.lastBookingTickets.length || this.localConfirmedBookings.length) {
+      const pending = (this.lastBookingsCart?.items ?? []).map((item) => this.mapCartItemToUiBooking(item));
+      const offlinePending = this.localPendingBookings.filter(b => b.id < 0);
+      this.localPendingBookings = [...pending, ...offlinePending];
+      const confirmed = this.lastBookingTickets.map((ticket) => this.mapTicketToUiBooking(ticket));
+      this.bookings = this.mergeBookings([
+        ...this.localPendingBookings,
+        ...confirmed,
+        ...this.localConfirmedBookings,
+      ]);
+    }
+
+    if (this.lastMyTicketDtos.length) {
+      this.myTickets = this.mergeBookings([
+        ...this.lastMyTicketDtos.map((ticket) => this.mapTicketToUiBooking(ticket)),
+        ...this.localConfirmedBookings,
+      ]);
+    }
+
+    if (this.lastMarketplaceResult) {
+      this.marketplace = this.mapMarketplaceToUi(this.lastMarketplaceResult);
+    }
+  }
+
   private formatDuration(totalMinutes: number): string {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -1240,20 +1527,41 @@ export class AppStateService {
   }
 
   public isTrainTrip(agencyName: any = '', transportType: any = ''): boolean {
+    const agency = String(agencyName || '').toUpperCase();
+    const type = String(transportType || '').toUpperCase();
+    const isKnownTrainAgency = agency === 'EGYPTIAN NATIONAL RAILWAYS'
+      || agency.includes('NATIONAL RAIL')
+      || agency.includes('RAILWAY')
+      || agency.includes('TRAIN')
+      || agency.includes('ENR')
+      || agency.includes('TALGO')
+      || agency.includes('السكة')
+      || agency.includes('الحديد')
+      || agency.includes('قطار');
+    if (isKnownTrainAgency) {
+      return true;
+    }
+
+    const isKnownBusAgency = agency.includes('BUS')
+      || agency.includes('BLUEBUS')
+      || agency.includes('GO BUS')
+      || agency.includes('GOBUS')
+      || agency.includes('SUPER JET')
+      || agency.includes('سوبر جيت')
+      || agency.includes('اتوبيس')
+      || agency.includes('باص');
+    if (isKnownBusAgency) {
+      return false;
+    }
+
     if (transportType === 2 || String(transportType) === '2') {
       return true;
     }
     if (transportType === 1 || String(transportType) === '1') {
       return false;
     }
-    const agency = String(agencyName || '').toUpperCase();
-    const type = String(transportType || '').toUpperCase();
+
     return type === 'TRAIN'
-      || agency === 'EGYPTIAN NATIONAL RAILWAYS'
-      || agency.includes('NATIONAL RAIL')
-      || agency.includes('RAILWAY')
-      || agency.includes('TRAIN')
-      || agency.includes('ENR')
-      || agency.includes('TALGO');
+      || type === 'ENR';
   }
 }

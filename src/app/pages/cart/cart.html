@@ -1,0 +1,125 @@
+<div class="cart-page">
+  <div class="cart-header">
+    <div>
+      <h1>{{ 'My Cart' | t }}</h1>
+      <p>{{ 'Pending holds are reserved for a limited time before checkout' | t }}.</p>
+    </div>
+    <button class="refresh-btn" type="button" (click)="loadCart()" [disabled]="isBusy">
+      {{ 'Refresh' | t }}
+    </button>
+  </div>
+
+  <div class="message" [class.error]="messageKind === 'error'" *ngIf="message">{{ message | t }}</div>
+
+  <div class="skeleton-list" *ngIf="state.kind === 'loading' || state.kind === 'initial'">
+    <div class="skeleton-card" *ngFor="let item of [1, 2, 3]"></div>
+  </div>
+
+  <section class="empty-state" *ngIf="state.kind === 'empty'">
+    <div class="empty-icon">🛒</div>
+    <h2>{{ 'Your cart is empty' | t }}</h2>
+    <p>{{ 'Add trips to your cart to see them here' | t }}.</p>
+    <button class="primary-btn" type="button" routerLink="/booking">{{ 'Book Trip' | t }}</button>
+  </section>
+
+  <section class="error-state" *ngIf="state.kind === 'error'">
+    <div class="empty-icon">!</div>
+    <h2>{{ 'Could not load cart' | t }}</h2>
+    <p>{{ state.message | t }}</p>
+    <button class="primary-btn" type="button" (click)="loadCart()">{{ 'Retry' | t }}</button>
+  </section>
+
+  <ng-container *ngIf="cart as currentCart">
+    <div class="cart-layout" *ngIf="currentCart.items.length">
+      <div class="cart-list">
+        <article class="cart-item" *ngFor="let item of currentCart.items">
+          <div class="item-topline">
+            <div>
+              <span class="agency-badge">{{ item.agencyName }}</span>
+              <h2>{{ item.origin }} → {{ item.destination }}</h2>
+              <p>{{ item.originGov }} {{ 'to' | t }} {{ item.destinationGov }}</p>
+            </div>
+            <div class="price-badge">{{ item.totalPrice | number:'1.2-2' }} {{ 'EGP' | t }}</div>
+          </div>
+
+          <div class="item-meta">
+            <div>
+              <span>{{ 'Boarding' | t }}</span>
+              <strong>{{ item.boardingTime }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Dropoff' | t }}</span>
+              <strong>{{ item.dropoffTime }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Class' | t }}</span>
+              <strong>{{ item.className }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Hold' | t }}</span>
+              <strong [class.expired]="isExpired(item)">{{ holdLabel(item) | t }}</strong>
+            </div>
+          </div>
+
+          <div class="passenger-list">
+            <div class="passenger-row" *ngFor="let passenger of item.passengers">
+              <span>{{ passenger.name }}</span>
+              <span>{{ 'ID' | t }} {{ passenger.idNumber }}</span>
+              <strong>{{ 'Seat' | t }} {{ passenger.seatNumber }}</strong>
+            </div>
+          </div>
+
+          <button
+            class="remove-btn"
+            type="button"
+            (click)="cancelItem(item.bookingId)"
+            [disabled]="isBusy">
+            {{ isCancelling(item.bookingId) ? ('Cancelling...' | t) : ('Remove Hold' | t) }}
+          </button>
+        </article>
+      </div>
+
+      <aside class="checkout-panel">
+        <h2>{{ 'Checkout' | t }}</h2>
+        <div class="summary-row">
+          <span>{{ 'Cart subtotal' | t }}</span>
+          <strong>{{ currentCart.grandTotal | number:'1.2-2' }} {{ 'EGP' | t }}</strong>
+        </div>
+
+        <div class="points-control">
+          <label for="points">{{ 'Use points' | t }}</label>
+          <input
+            id="points"
+            type="range"
+            [min]="0"
+            [max]="maxRedeemablePoints"
+            [step]="sliderStep"
+            [value]="pointsToRedeem"
+            (input)="onPointsChange($event)"
+            [disabled]="isBusy || maxRedeemablePoints === 0" />
+          <div class="points-line">
+            <span>{{ pointsToRedeem }} {{ 'pts' | t }}</span>
+            <span>- {{ discountValue | number:'1.2-2' }} {{ 'EGP' | t }}</span>
+          </div>
+        </div>
+
+        <div class="summary-row total">
+          <span>{{ 'Total after points' | t }}</span>
+          <strong>{{ finalTotal | number:'1.2-2' }} {{ 'EGP' | t }}</strong>
+        </div>
+
+        <p class="hold-warning" *ngIf="hasExpiredHold">
+          {{ 'One or more holds expired Refresh the cart before checkout' | t }}.
+        </p>
+
+        <button
+          class="checkout-btn"
+          type="button"
+          (click)="checkout()"
+          [disabled]="isBusy || hasExpiredHold || currentCart.items.length === 0">
+          {{ state.kind === 'checkoutLoading' ? ('Checking out...' | t) : ('Checkout with Wallet' | t) }}
+        </button>
+      </aside>
+    </div>
+  </ng-container>
+</div>

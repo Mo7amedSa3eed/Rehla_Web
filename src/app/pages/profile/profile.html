@@ -1,10 +1,28 @@
 <div class="container">
-  <div class="profile-wrapper">
+  <section class="profile-state-card" *ngIf="state.isProfileLoading && !state.isProfileLoaded">
+    <div class="profile-state-icon"></div>
+    <h2>{{ 'Loading profile...' | t }}</h2>
+    <p>{{ 'Please wait while we load your account details' | t }}.</p>
+  </section>
+
+  <section class="profile-state-card error" *ngIf="!state.isProfileLoading && !state.isProfileLoaded && state.profileLoadError">
+    <div class="profile-state-icon">!</div>
+    <h2>{{ 'Could not load your profile' | t }}</h2>
+    <p>{{ state.profileLoadError | t }}</p>
+    <button class="btn btn-primary" type="button" (click)="reloadProfile()">{{ 'Retry' | t }}</button>
+  </section>
+
+  <div class="profile-warning" *ngIf="state.isProfileLoaded && state.profileLoadError">
+    <span>{{ state.profileLoadError | t }}</span>
+    <button type="button" (click)="reloadProfile()">{{ 'Retry' | t }}</button>
+  </div>
+
+  <div class="profile-wrapper" *ngIf="state.isProfileLoaded">
 
     <!-- Profile Header Card -->
     <div class="profile-card">
       <div class="avatar-large">
-        <img *ngIf="user.photo; else defaultAvatar" [src]="user.photo" class="avatar-img" alt="Profile Photo" />
+        <img *ngIf="user.photo; else defaultAvatar" [src]="user.photo" class="avatar-img" [attr.alt]="'Profile Photo' | t" />
         <ng-template #defaultAvatar>
           <span class="avatar-initials">{{ initials }}</span>
         </ng-template>
@@ -13,22 +31,22 @@
       <h2>{{ fullName }}</h2>
       <p class="email">{{ user.email }}</p>
       <p *ngIf="user.phone" class="phone">📞 {{ user.phone }}</p>
-      <p *ngIf="user.gender" class="gender">👤 {{ user.gender }}</p>
-      <p *ngIf="user.country" class="country">📍 {{ user.country }} ({{ user.countryCode }})</p>
+      <p *ngIf="user.gender" class="gender">👤 {{ user.gender | t }}</p>
+      <p *ngIf="user.country" class="country">📍 {{ user.country | t }} ({{ user.countryCode }})</p>
 
       <!-- Stats Row -->
       <div class="stats">
         <div class="stat-box">
           <h3>{{ user.totalTrips }}</h3>
-          <span>Total Trips</span>
+          <span>{{ 'Total Trips' | t }}</span>
         </div>
         <div class="stat-box">
-          <h3>{{ user.loyaltyPointsBalance | number:'1.0-0' }} pts</h3>
-          <span>Loyalty Points</span>
+          <h3>{{ user.loyaltyPointsBalance | number:'1.0-0' }} {{ 'pts' | t }}</h3>
+          <span>{{ 'Loyalty Points' | t }}</span>
         </div>
         <div class="stat-box">
-          <h3>{{ user.walletBalance | number:'1.2-2' }} EGP</h3>
-          <span>Wallet</span>
+          <h3>{{ user.walletBalance | number:'1.2-2' }} {{ 'EGP' | t }}</h3>
+          <span>{{ 'Wallet' | t }}</span>
         </div>
       </div>
     </div>
@@ -37,7 +55,7 @@
     <div class="loyalty-card card" *ngIf="user.loyaltyPointsBalance !== undefined">
       <div class="loyalty-card-header">
         <span class="loyalty-icon">💎</span>
-        <h3>Loyalty Hub</h3>
+        <h3>{{ 'Loyalty Hub' | t }}</h3>
       </div>
 
       <div class="wallet-actions">
@@ -49,20 +67,20 @@
           
           <div class="loyalty-rows" style="margin-bottom: 0; flex: 1;">
             <div class="loyalty-row">
-              <span>Balance</span>
-              <span class="loyalty-value">{{ user.loyaltyPointsBalance | number:'1.0-0' }} pts</span>
+              <span>{{ 'Balance' | t }}</span>
+              <span class="loyalty-value">{{ user.loyaltyPointsBalance | number:'1.0-0' }} {{ 'pts' | t }}</span>
             </div>
             <div class="loyalty-row" *ngIf="user.expiringPointsAmount > 0">
-              <span>⚠️ Expiring Soon</span>
-              <span class="loyalty-expiring">{{ user.expiringPointsAmount | number:'1.0-0' }} pts</span>
+              <span>⚠️ {{ 'Expiring Soon' | t }}</span>
+              <span class="loyalty-expiring">{{ user.expiringPointsAmount | number:'1.0-0' }} {{ 'pts' | t }}</span>
             </div>
             <div class="loyalty-row" *ngIf="user.nextExpiryDate">
-              <span>Expiry Date</span>
-              <span style="color: #fff; font-weight: 500;">{{ user.nextExpiryDate | date:'mediumDate' }}</span>
+              <span>{{ 'Expiry Date' | t }}</span>
+              <span style="color: #fff; font-weight: 500;">{{ user.nextExpiryDate | date:'mediumDate':'':language.currentLocale }}</span>
             </div>
           </div>
 
-          <span class="wallet-trigger-arrow" style="margin-left: 20px;">›</span>
+          <span class="wallet-trigger-arrow" style="margin-inline-start: 20px;">›</span>
         </section>
       </div>
     </div>
@@ -71,23 +89,23 @@
     <div class="wallet-card card">
       <div class="wallet-card-header">
         <span>💳</span>
-        <h3>Wallet</h3>
+        <h3>{{ 'Wallet' | t }}</h3>
       </div>
-      <p class="wallet-balance">{{ user.walletBalance | number:'1.2-2' }} EGP</p>
+      <p class="wallet-balance">{{ user.walletBalance | number:'1.2-2' }} {{ 'EGP' | t }}</p>
       <div class="wallet-actions">
         <section class="wallet-topup-trigger" role="button" tabindex="0" (click)="openWalletTopup()"
           (keydown.enter)="openWalletTopup()" (keydown.space)="$event.preventDefault(); openWalletTopup()">
           <div>
-            <h4>Deposit Funds</h4>
-            <p class="wallet-note">Add money via Visa card.</p>
+            <h4>{{ 'Deposit Funds' | t }}</h4>
+            <p class="wallet-note">{{ 'Add money via Visa card' | t }}.</p>
           </div>
           <span class="wallet-trigger-arrow">›</span>
         </section>
         <section class="wallet-topup-trigger" role="button" tabindex="0" (click)="openWalletHistory()"
           (keydown.enter)="openWalletHistory()">
           <div>
-            <h4>View History</h4>
-            <p class="wallet-note">View all transactions.</p>
+            <h4>{{ 'View History' | t }}</h4>
+            <p class="wallet-note">{{ 'View all transactions' | t }}.</p>
           </div>
           <span class="wallet-trigger-arrow">›</span>
         </section>
@@ -96,13 +114,20 @@
 
     <!-- Quick Actions -->
     <div class="quick-actions card">
-      <h3>Quick Actions</h3>
-      <button class="action-btn" routerLink="/edit-profile">✏️ Edit Profile</button>
-      <button class="action-btn" routerLink="/my-tickets">🎟️ My Tickets</button>
-      <button class="action-btn" routerLink="/challenges">💎 Loyalty Hub</button>
-      <button class="action-btn" routerLink="/report-issue">🚨 Report an Issue</button>
-      <button class="action-btn" (click)="openSupportTickets()">🎫 Support Tickets</button>
-      <button class="action-btn logout-action" (click)="logout()">🔐 Logout</button>
+      <h3>{{ 'Quick Actions' | t }}</h3>
+      <div class="language-setting-row">
+        <div>
+          <strong>{{ 'settings.languageTitle' | t }}</strong>
+          <span>{{ 'settings.languageSubtitle' | t }}</span>
+        </div>
+        <app-language-switch></app-language-switch>
+      </div>
+      <button class="action-btn" routerLink="/edit-profile">✏️ {{ 'Edit Profile' | t }}</button>
+      <button class="action-btn" routerLink="/my-tickets">🎟️ {{ 'My Tickets' | t }}</button>
+      <button class="action-btn" routerLink="/challenges">💎 {{ 'Loyalty Hub' | t }}</button>
+      <button class="action-btn" routerLink="/report-issue">🚨 {{ 'Report an Issue' | t }}</button>
+      <button class="action-btn" (click)="openSupportTickets()">🎫 {{ 'Support Tickets' | t }}</button>
+      <button class="action-btn logout-action" (click)="logout()">🔐 {{ 'Logout' | t }}</button>
     </div>
 
   </div>
@@ -112,37 +137,37 @@
 <div class="wallet-modal-overlay" *ngIf="showWalletTopupModal" (click)="onWalletOverlayClick($event)">
   <section class="wallet-topup wallet-modal card">
     <div class="wallet-modal-header">
-      <h3>Deposit Funds via Visa</h3>
-      <button class="wallet-close" type="button" (click)="closeWalletTopup()" [disabled]="isChargingWallet">×</button>
+      <h3>{{ 'Deposit Funds via Visa' | t }}</h3>
+      <button class="wallet-close" type="button" (click)="closeWalletTopup()" [disabled]="isChargingWallet" [attr.aria-label]="'Close' | t">×</button>
     </div>
-    <p class="wallet-note">Minimum: 10 EGP &bull; Maximum: 10,000 EGP</p>
+    <p class="wallet-note">{{ 'Minimum: 10 EGP • Maximum: 10,000 EGP' | t }}</p>
 
     <div class="wallet-form-grid">
       <label class="wallet-field full-width">
-        <span>Amount (EGP)</span>
-        <input type="number" min="10" max="10000" step="1" [(ngModel)]="depositAmount" placeholder="Enter amount" />
+        <span>{{ 'Amount (EGP)' | t }}</span>
+        <input type="number" min="10" max="10000" step="1" [(ngModel)]="depositAmount" [placeholder]="'Enter amount' | t" />
       </label>
       <label class="wallet-field full-width">
-        <span>Visa Card Number (16 digits)</span>
+        <span>{{ 'Visa Card Number (16 digits)' | t }}</span>
         <input type="text" [(ngModel)]="cardNumber" placeholder="4111 1111 1111 1111" maxlength="19" />
       </label>
       <label class="wallet-field">
-        <span>Expiry Date</span>
+        <span>{{ 'Expiry Date' | t }}</span>
         <input type="text" inputmode="numeric" maxlength="5" [(ngModel)]="expiryDate"
-          (ngModelChange)="onExpiryDateChange($event)" placeholder="MM/YY" />
+          (ngModelChange)="onExpiryDateChange($event)" [placeholder]="'MM/YY' | t" />
       </label>
       <label class="wallet-field">
-        <span>CVV</span>
+        <span>{{ 'CVV' | t }}</span>
         <input type="password" inputmode="numeric" maxlength="3" [(ngModel)]="cvv" (ngModelChange)="onCvvChange($event)"
           placeholder="123" />
       </label>
     </div>
 
     <button class="btn btn-primary charge-btn" type="button" [disabled]="isChargingWallet" (click)="chargeWallet()">
-      {{ isChargingWallet ? 'Processing...' : 'Deposit' }}
+      {{ isChargingWallet ? ('Processing...' | t) : ('Deposit' | t) }}
     </button>
-    <p class="wallet-success" *ngIf="walletMessage">✅ {{ walletMessage }}</p>
-    <p class="wallet-error" *ngIf="walletError">❌ {{ walletError }}</p>
+    <p class="wallet-success" *ngIf="walletMessage">✅ {{ walletMessage | t }}</p>
+    <p class="wallet-error" *ngIf="walletError">❌ {{ walletError | t }}</p>
   </section>
 </div>
 
@@ -150,23 +175,23 @@
 <div class="wallet-modal-overlay" *ngIf="showWalletHistoryModal" (click)="onWalletHistoryOverlayClick($event)">
   <section class="wallet-modal card wallet-history-modal">
     <div class="wallet-modal-header">
-      <h3>Transaction History</h3>
-      <button class="wallet-close" type="button" (click)="closeWalletHistory()">×</button>
+      <h3>{{ 'Transaction History' | t }}</h3>
+      <button class="wallet-close" type="button" (click)="closeWalletHistory()" [attr.aria-label]="'Close' | t">×</button>
     </div>
-    <div *ngIf="isLoadingWalletHistory" class="loading-spinner">Loading...</div>
-    <p class="wallet-error" *ngIf="walletHistoryError">{{ walletHistoryError }}</p>
+    <div *ngIf="isLoadingWalletHistory" class="loading-spinner">{{ 'Loading...' | t }}</div>
+    <p class="wallet-error" *ngIf="walletHistoryError">{{ walletHistoryError | t }}</p>
     <div *ngIf="!isLoadingWalletHistory && walletHistory.length === 0 && !walletHistoryError" class="empty-state">
-      No transactions found.
+      {{ 'No transactions found' | t }}.
     </div>
     <div class="history-list">
       <div class="history-item" *ngFor="let tx of walletHistory">
         <div class="history-info">
-          <span class="history-desc">{{ tx.description }}</span>
-          <span class="history-type">{{ tx.type }}</span>
-          <span class="history-date">{{ tx.createdAt | date:'medium' }}</span>
+          <span class="history-desc">{{ language.currentLanguage === 'ar' && tx.descriptionAr ? tx.descriptionAr : tx.description }}</span>
+          <span class="history-type">{{ tx.type | t }}</span>
+          <span class="history-date">{{ tx.createdAt | date:'medium':'':language.currentLocale }}</span>
         </div>
         <span class="history-amount" [class.credit]="tx.amount > 0" [class.debit]="tx.amount < 0">
-          {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount | number:'1.2-2' }} EGP
+          {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount | number:'1.2-2' }} {{ 'EGP' | t }}
         </span>
       </div>
     </div>
@@ -177,27 +202,27 @@
 <div class="wallet-modal-overlay" *ngIf="showSupportTicketsModal" (click)="onSupportTicketsOverlayClick($event)">
   <section class="wallet-modal card support-tickets-modal">
     <div class="wallet-modal-header">
-      <h3>Support Tickets</h3>
-      <button class="wallet-close" type="button" (click)="closeSupportTickets()">×</button>
+      <h3>{{ 'Support Tickets' | t }}</h3>
+      <button class="wallet-close" type="button" (click)="closeSupportTickets()" [attr.aria-label]="'Close' | t">×</button>
     </div>
-    <div *ngIf="isLoadingSupportTickets" class="loading-spinner">Loading...</div>
-    <p class="wallet-error" *ngIf="supportTicketsError">{{ supportTicketsError }}</p>
+    <div *ngIf="isLoadingSupportTickets" class="loading-spinner">{{ 'Loading...' | t }}</div>
+    <p class="wallet-error" *ngIf="supportTicketsError">{{ supportTicketsError | t }}</p>
     <div *ngIf="!isLoadingSupportTickets && supportTickets.length === 0 && !supportTicketsError" class="empty-state">
-      You haven't submitted any support tickets.
+      {{ "You haven't submitted any support tickets" | t }}.
     </div>
     <div class="support-tickets-list">
       <div class="support-ticket-item" *ngFor="let ticket of supportTickets">
         <div class="ticket-header">
           <div style="display: flex; gap: 10px; align-items: center;">
             <span class="ticket-id">#{{ ticket.ticketId }}</span>
-            <span class="ticket-status" [ngClass]="ticket.status | lowercase">{{ ticket.status }}</span>
+            <span class="ticket-status" [ngClass]="ticket.status | lowercase">{{ ticket.status | t }}</span>
           </div>
-          <span class="ticket-category" [ngClass]="getCategoryClass(ticket.category)">{{ getCategoryName(ticket.category) }}</span>
+          <span class="ticket-category" [ngClass]="getCategoryClass(ticket.category)">{{ getCategoryName(ticket.category) | t }}</span>
         </div>
-        <h4 class="ticket-title">{{ ticket.title }}</h4>
-        <p class="ticket-desc">{{ ticket.description }}</p>
+        <h4 class="ticket-title">{{ ticketTitle(ticket) }}</h4>
+        <p class="ticket-desc">{{ ticketDescription(ticket) }}</p>
         <div class="ticket-footer">
-          <span class="ticket-date">{{ ticket.createdAt | date:'medium' }}</span>
+          <span class="ticket-date">{{ ticket.createdAt | date:'medium':'':language.currentLocale }}</span>
         </div>
       </div>
     </div>
@@ -208,12 +233,12 @@
 <div class="logout-modal-overlay" *ngIf="showLogoutConfirmModal" (click)="cancelLogout()">
   <section class="logout-confirm-modal card">
     <div class="logout-modal-header">
-      <h3>Confirm Logout</h3>
+      <h3>{{ 'Confirm Logout' | t }}</h3>
     </div>
-    <p class="logout-modal-message">Are you sure you want to logout?</p>
+    <p class="logout-modal-message">{{ 'Are you sure you want to logout?' | t }}</p>
     <div class="logout-modal-buttons">
-      <button class="btn btn-primary logout-yes-btn" type="button" (click)="confirmLogout()">Yes, Logout</button>
-      <button class="btn btn-outline logout-no-btn" type="button" (click)="cancelLogout()">Cancel</button>
+      <button class="btn btn-primary logout-yes-btn" type="button" (click)="confirmLogout()">{{ 'Yes, Logout' | t }}</button>
+      <button class="btn btn-outline logout-no-btn" type="button" (click)="cancelLogout()">{{ 'Cancel' | t }}</button>
     </div>
   </section>
 </div>

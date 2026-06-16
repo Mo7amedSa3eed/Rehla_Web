@@ -1,4 +1,8 @@
 <div class="auth-container">
+  <div class="page-language-switch">
+    <app-language-switch></app-language-switch>
+  </div>
+
   <div class="animated-background">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -8,16 +12,16 @@
   <div class="auth-card">
     <div class="auth-header">
       <div class="badge-glass">
-        <span class="pulse-dot"></span> Welcome back
+        <span class="pulse-dot"></span> {{ 'Welcome back' | t }}
       </div>
-      <h1 class="auth-title">Sign in to Rihla</h1>
-      <p class="auth-subtitle">Access your bookings, tickets, and wallet.</p>
+      <h1 class="auth-title">{{ 'Sign in to Rihla' | t }}</h1>
+      <p class="auth-subtitle">{{ 'Access your bookings, tickets, and wallet.' | t }}</p>
     </div>
 
     <form #loginForm="ngForm" (ngSubmit)="submit(loginForm)">
       <div class="form-stack">
         <div class="form-group glass-input-group">
-          <label>Email Address</label>
+          <label>{{ 'Email Address' | t }}</label>
           <input
             name="email"
             type="email"
@@ -28,14 +32,13 @@
         </div>
 
         <div class="form-group glass-input-group">
-          <label>Password</label>
+          <label>{{ 'Password' | t }}</label>
           <input
             name="password"
             type="password"
             required
-            minlength="8"
             [(ngModel)]="credentials.password"
-            placeholder="Password123" />
+            placeholder="••••••••" />
         </div>
       </div>
 
@@ -43,19 +46,19 @@
         <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
         
         <div class="helper-row">
-          <a class="link-glow" routerLink="/auth/forgot-password">Forgot password?</a>
+          <a class="link-glow" routerLink="/auth/forgot-password">{{ 'Forgot password?' | t }}</a>
         </div>
 
         <button
           class="btn-glow full-width"
           type="submit"
           [disabled]="loginForm.invalid || isSubmitting">
-          <span>{{ isSubmitting ? 'Signing in...' : 'Sign In' }}</span>
+          <span>{{ isSubmitting ? ('Signing in...' | t) : ('Sign In' | t) }}</span>
           <span class="arrow">→</span>
         </button>
         
         <div class="helper-text-center">
-          New here? <a class="link-glow" routerLink="/signup">Create an account</a>
+          {{ 'New here?' | t }} <a class="link-glow" routerLink="/signup">{{ 'Create an account' | t }}</a>
         </div>
       </div>
     </form>

@@ -2,8 +2,8 @@
   <div class="passenger-header">
     <h2 class="passenger-title">
       <span *ngIf="showHeaderIcon">👤 </span>
-      Passenger {{ index + 1 }}
-      <span class="seat-badge" *ngIf="seatLabel">Seat: {{ seatLabel }}</span>
+      {{ 'Passenger' | t }} {{ index + 1 }}
+      <span class="seat-badge" *ngIf="seatLabel">{{ 'Seat' | t }}: {{ seatLabel }}</span>
     </h2>
   </div>
 
@@ -15,7 +15,7 @@
         <input
           type="text"
           formControlName="passengerName"
-          placeholder="Full Name"
+          [placeholder]="'Full Name' | t"
           [class.invalid]="hasError('passengerName', 'required')" />
       </div>
     </div>
@@ -25,10 +25,10 @@
       <div class="form-field">
         <span class="field-icon">🪪</span>
         <div class="field-content">
-          <span class="field-label">ID Type</span>
+          <span class="field-label">{{ 'ID Type' | t }}</span>
           <select class="select-input" formControlName="idType">
-            <option value="NationalId">National ID</option>
-            <option value="Passport">Passport</option>
+            <option value="NationalId">{{ 'National ID' | t }}</option>
+            <option value="Passport">{{ 'Passport' | t }}</option>
           </select>
         </div>
       </div>
@@ -61,7 +61,7 @@
         <input
           type="tel"
           formControlName="phoneLocalNumber"
-          placeholder="Phone Number"
+          [placeholder]="'Phone Number' | t"
           inputmode="numeric"
           [pattern]="phoneLocalPattern()"
           [attr.minlength]="phoneLocalMinLength()"
@@ -77,7 +77,7 @@
         <input
           type="email"
           formControlName="email"
-          placeholder="Email Address (Optional)"
+          [placeholder]="'Email Address (Optional)' | t"
           [class.invalid]="hasError('email', 'email')" />
       </div>
     </div>

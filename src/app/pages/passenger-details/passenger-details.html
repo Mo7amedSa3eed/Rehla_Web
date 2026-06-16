@@ -3,32 +3,65 @@
     <button class="back-btn" type="button" (click)="goBack()" [disabled]="isProcessing">
       ←
     </button>
-    <h1>Passenger Details</h1>
+    <h1>{{ 'Passenger Details' | t }}</h1>
   </div>
+
+  <div class="page-error" *ngIf="actionError">{{ actionError }}</div>
 
   <ng-container *ngIf="selectedLegs.length > 0 && form">
     <form [formGroup]="form">
-      <div formArrayName="passengers">
-        <div *ngFor="let control of passengersArray.controls; let i = index">
-          
-          <app-passenger-card
-            [group]="$any(control)"
-            [index]="i"
-            [isTrain]="isTrain"
-            [showEmail]="true"
-            [requirePhone]="true"
-            [phoneCodes]="phoneCodes">
-          </app-passenger-card>
+      <div formArrayName="legs">
 
-          <!-- Autofill Banner immediately after first passenger if bus and multi-pax -->
-          <app-passenger-autofill-banner
-            *ngIf="i === 0 && showAutofillBanner"
-            [isAutofilled]="isAutofilled"
-            [errorMessage]="autofillError"
-            (triggerAutofill)="handleAutofill()">
-          </app-passenger-autofill-banner>
+        <!-- ── One section per leg ── -->
+        <div
+          *ngFor="let legGroup of legsArray.controls; let legIdx = index"
+          [formGroupName]="legIdx"
+          class="leg-section">
 
+          <!-- Leg header — only shown for multi-leg trips -->
+          <div class="leg-header" *ngIf="isMultiLeg">
+            <div class="leg-header-badge">{{ legLabel(legIdx) }}</div>
+            <div class="leg-header-route">
+              <span class="leg-header-city">{{ selectedLegs[legIdx].from }}</span>
+              <span class="leg-header-arrow">→</span>
+              <span class="leg-header-city">{{ selectedLegs[legIdx].to }}</span>
+            </div>
+            <div class="leg-header-meta">
+              <span>{{ isLegTrain(legIdx) ? '🚆' : '🚌' }}</span>
+              <span>{{ selectedLegs[legIdx].agencyName }}</span>
+              <span class="leg-meta-dot">·</span>
+              <span>{{ selectedLegs[legIdx].date }} {{ selectedLegs[legIdx].time }}</span>
+              <span class="leg-meta-dot">·</span>
+              <span>{{ passengerCountForLeg(legIdx) }} {{ passengerCountForLeg(legIdx) > 1 ? ('passengers' | t) : ('passenger' | t) }}</span>
+            </div>
+          </div>
+
+          <!-- Passengers for this leg -->
+          <div formArrayName="passengers">
+            <div *ngFor="let control of getPassengersArray(legIdx).controls; let i = index">
+
+              <app-passenger-card
+                [group]="$any(control)"
+                [index]="i"
+                [isTrain]="isLegTrain(legIdx)"
+                [showEmail]="true"
+                [requirePhone]="true"
+                [seatLabel]="!isLegTrain(legIdx) ? selectedLegs[legIdx]?.selectedSeats?.[i] || '' : ''"
+                [phoneCodes]="phoneCodes">
+              </app-passenger-card>
+
+              <!-- Autofill Banner after passenger 0 if bus and multi-pax -->
+              <app-passenger-autofill-banner
+                *ngIf="i === 0 && showAutofillBanner(legIdx)"
+                [isAutofilled]="autofillStates[legIdx].isAutofilled"
+                [errorMessage]="autofillStates[legIdx].autofillError"
+                (triggerAutofill)="handleAutofill(legIdx)">
+              </app-passenger-autofill-banner>
+
+            </div>
+          </div>
         </div>
+
       </div>
     </form>
   </ng-container>
@@ -36,7 +69,7 @@
   <div class="loyalty-section">
     <div class="loyalty-header">
       <span class="loyalty-icon">💎</span>
-      <h3>Use Loyalty Points</h3>
+      <h3>{{ 'Use Loyalty Points' | t }}</h3>
     </div>
     <input
       class="loyalty-slider"
@@ -49,40 +82,40 @@
 
     <div class="loyalty-card">
       <div class="loyalty-row">
-        <span>Points used</span>
-        <span>{{ pointsToRedeem }} pts</span>
+        <span>{{ 'Points used' | t }}</span>
+        <span>{{ pointsToRedeem }} {{ 'pts' | t }}</span>
       </div>
       <div class="loyalty-row">
-        <span>Discount</span>
-        <span class="discount">- {{ discountValue | number:'1.2-2' }} EGP</span>
+        <span>{{ 'Discount' | t }}</span>
+        <span class="discount">- {{ discountValue | number:'1.2-2' }} {{ 'EGP' | t }}</span>
       </div>
       <div class="loyalty-row">
-        <span>Remaining after</span>
-        <span class="remaining">{{ pointsBalance - pointsToRedeem }} pts</span>
+        <span>{{ 'Remaining after' | t }}</span>
+        <span class="remaining">{{ pointsBalance - pointsToRedeem }} {{ 'pts' | t }}</span>
       </div>
       <div class="divider"></div>
       <div class="loyalty-row total">
-        <span>Final total</span>
-        <span>{{ finalTotal | number:'1.2-2' }} EGP</span>
+        <span>{{ 'Final total' | t }}</span>
+        <span>{{ finalTotal | number:'1.2-2' }} {{ 'EGP' | t }}</span>
       </div>
     </div>
-    <div class="loyalty-hint">{{ pointsPerEgp }} pts = 1.00 EGP</div>
+    <div class="loyalty-hint">{{ pointsPerEgp }} {{ 'pts' | t }} = 1.00 {{ 'EGP' | t }}</div>
   </div>
 
   <div class="action-buttons">
     <button
       class="btn add-to-cart-btn"
       type="button"
-      [disabled]="form.invalid || isProcessing"
+      [disabled]="isProcessing"
       (click)="addToCart()">
-      {{ isProcessing ? 'Processing...' : 'Add to Cart' }}
+      {{ isProcessing ? ('Processing...' | t) : ('Add to Cart' | t) }}
     </button>
     <button
       class="btn book-now-btn"
       type="button"
-      [disabled]="form.invalid || isProcessing"
+      [disabled]="isProcessing"
       (click)="bookNow()">
-      {{ isProcessing ? 'Processing...' : 'Book Now' }}
+      {{ isProcessing ? ('Processing...' | t) : ('Book Now' | t) }}
     </button>
   </div>
 </div>

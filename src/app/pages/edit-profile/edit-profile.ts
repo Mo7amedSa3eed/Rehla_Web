@@ -16,6 +16,7 @@ import {
   PhoneCodeOption,
   splitPhoneNumber,
 } from '../../shared/phone-codes';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 const nameRegex = /^[a-zA-Z\s\-']+$/;
 const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
@@ -25,7 +26,7 @@ const passportRegex = /^[a-zA-Z0-9\- ]{1,50}$/;
 @Component({
   selector: 'app-edit-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './edit-profile.html',
   styleUrls: ['./edit-profile.scss']
 })
@@ -233,26 +234,29 @@ export class EditProfileComponent implements OnInit {
 
   validateForm(): string | null {
     if (!this.user.firstName.trim() || !nameRegex.test(this.user.firstName)) {
-      return 'First name is required and must contain only letters, spaces, hyphens, or apostrophes.';
+      return 'First name is required and must contain only letters, spaces, hyphens, or apostrophes';
+    }
+    if (!this.user.familyName?.trim() || !nameRegex.test(this.user.familyName)) {
+      return 'Family name is required and must contain only letters, spaces, hyphens, or apostrophes';
     }
     if (!this.user.lastName.trim() || !nameRegex.test(this.user.lastName)) {
-      return 'Last name is required and must contain only letters, spaces, hyphens, or apostrophes.';
+      return 'Last name is required and must contain only letters, spaces, hyphens, or apostrophes';
     }
-    if (this.user.email && !emailRegex.test(this.user.email)) {
-      return 'Please enter a valid email address.';
+    if (!this.user.email?.trim() || !emailRegex.test(this.user.email)) {
+      return 'Please enter a valid email address';
     }
-    if (this.phoneLocalNumber.trim() && !isLocalNumberValid(this.selectedPhoneCode, this.phoneLocalNumber)) {
-      return 'Please enter a valid phone number.';
+    if (!this.phoneLocalNumber.trim() || !isLocalNumberValid(this.selectedPhoneCode, this.phoneLocalNumber)) {
+      return 'Please enter a valid phone number';
     }
     // Identity validation (only if not yet set)
     if (!this.hasSetIdentity) {
       if (this.selectedIdType === 'national') {
         if (!nationalIdRegex.test(this.idNumber.trim())) {
-          return 'National ID must be 14 digits starting with 2 or 3.';
+          return 'National ID must be 14 digits starting with 2 or 3';
         }
       } else if (this.selectedIdType === 'passport') {
         if (!passportRegex.test(this.idNumber.trim())) {
-          return 'Passport number can only contain letters, digits, spaces, and hyphens (max 50 chars).';
+          return 'Passport number can only contain letters, digits, spaces, and hyphens (max 50 chars)';
         }
       }
     }
@@ -296,7 +300,7 @@ export class EditProfileComponent implements OnInit {
       // Step 4: Send profile update
       await this.state.saveProfile({
         firstName: this.user.firstName.trim(),
-        familyName: this.user.familyName?.trim() ?? '',
+        familyName: this.user.familyName.trim(),
         lastName: this.user.lastName.trim(),
         email: this.user.email?.trim(),
         phoneNumber: fullPhoneNumber,
@@ -308,7 +312,7 @@ export class EditProfileComponent implements OnInit {
       this.saveSuccess = true;
       setTimeout(() => this.router.navigate(['/profile']), 800);
     } catch (error: any) {
-      let msg = 'Failed to save profile.';
+      let msg = 'Failed to save profile';
       if (error?.error?.errors && Array.isArray(error.error.errors)) {
         msg = error.error.errors.join(', ');
       } else if (error?.error?.message) {

@@ -4,11 +4,13 @@ import { RouterModule } from '@angular/router';
 import { ApiService, LoyaltyChallengesPagedDto, LoyaltyHistoryPagedDto, UserChallengeDto } from '../../services/api';
 import { AppStateService } from '../../services/state';
 import { firstValueFrom } from 'rxjs';
+import { LanguageService } from '../../core/i18n/language.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-challenges-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslatePipe],
   templateUrl: './challenges-dashboard.html',
   styleUrls: ['./challenges-dashboard.scss']
 })
@@ -35,7 +37,8 @@ export class ChallengesDashboardComponent implements OnInit {
 
   constructor(
     public state: AppStateService,
-    private api: ApiService
+    private api: ApiService,
+    public language: LanguageService
   ) { }
 
   async ngOnInit(): Promise<void> {

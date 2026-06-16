@@ -4,20 +4,27 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppStateService, MarketplaceListing, UiBooking } from '../../services/state';
 import { QRCodeComponent } from 'angularx-qrcode';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageService } from '../../core/i18n/language.service';
 
 @Component({
   selector: 'app-my-tickets',
   standalone: true,
-  imports: [CommonModule, FormsModule, QRCodeComponent],
+  imports: [CommonModule, FormsModule, QRCodeComponent, TranslatePipe],
   templateUrl: './my-tickets.html',
   styleUrls: ['./my-tickets.scss']
 })
 export class MyTicketsComponent implements OnInit, OnDestroy {
+  private readonly activeBeforeBoardingMs = 5 * 60 * 60 * 1000;
+  private readonly boardingNowMs = 60 * 60 * 1000;
 
   view: 'tickets' | 'marketplace' = 'tickets';
   ticketTab: 'upcoming' | 'active' | 'past' = 'upcoming';
+  visibleTickets: UiBooking[] = [];
   isLoading = true;
+  hasLoadedTickets = false;
   loadError = '';
+  actionError = '';
 
   // Marketplace filter state
   isMarketplaceFilterOpen = false;
@@ -51,7 +58,11 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   // Print ref
   @ViewChild('boardingPassEl') boardingPassEl!: ElementRef;
 
-  constructor(public state: AppStateService, private router: Router) {}
+  constructor(
+    public state: AppStateService,
+    private router: Router,
+    private language: LanguageService,
+  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.refreshTickets();
@@ -63,6 +74,11 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   async refreshTickets(): Promise<void> {
+    this.actionError = '';
+    if (!this.state.isBrowser()) {
+      return;
+    }
+
     this.isLoading = true;
     this.loadError = '';
 
@@ -75,9 +91,16 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     } catch (error) {
       this.loadError = error instanceof Error ? error.message : 'Failed to load tickets';
     } finally {
+      this.updateVisibleTickets();
+      this.hasLoadedTickets = true;
       this.isLoading = false;
       this.updateCountdowns();
     }
+  }
+
+  setTicketTab(tab: 'upcoming' | 'active' | 'past'): void {
+    this.ticketTab = tab;
+    this.updateVisibleTickets();
   }
 
   // ─── Ticket Classification (Spec rules) ───
@@ -86,63 +109,111 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     return new Date(value);
   }
 
-  private isSameDay(d1: Date, d2: Date): boolean {
-    return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
+  private normalize(value?: string | null): string {
+    return (value ?? '').trim().toLowerCase();
   }
 
-  private isUpcoming(ticket: UiBooking, now = new Date()): boolean {
-    if (!ticket.boardingTimeRaw) return false;
-    const boarding = this.parseScheduleLocal(ticket.boardingTimeRaw);
-    return boarding > now && !this.isSameDay(boarding, now);
+  private ticketStatus(ticket: UiBooking): string {
+    return this.normalize(ticket.rawStatus ?? ticket.status);
   }
 
-  private isActiveNow(ticket: UiBooking, now = new Date()): boolean {
-    if (!ticket.boardingTimeRaw) return false;
-    const boarding = this.parseScheduleLocal(ticket.boardingTimeRaw);
-    return this.isSameDay(boarding, now);
+  private isConfirmed(ticket: UiBooking): boolean {
+    return this.ticketStatus(ticket) === 'confirmed';
   }
 
-  private isPast(ticket: UiBooking, now = new Date()): boolean {
-    if (!ticket.dropoffTimeRaw || !ticket.boardingTimeRaw) return false;
-    const dropoff = this.parseScheduleLocal(ticket.dropoffTimeRaw);
-    const boarding = this.parseScheduleLocal(ticket.boardingTimeRaw);
-    
-    // If it's earlier than today, or it's earlier than now and not today
-    return (dropoff < now && !this.isSameDay(boarding, now)) ||
-           this.isRefundAccepted(ticket) || ticket.status === 'sold';
+  private isCompleted(ticket: UiBooking): boolean {
+    return this.ticketStatus(ticket) === 'completed';
+  }
+
+  private isCancelled(ticket: UiBooking): boolean {
+    return this.ticketStatus(ticket) === 'cancelled';
   }
 
   private isRefundAccepted(ticket: UiBooking): boolean {
-    return ticket.refundStatus === 'Accepted' || ticket.refundStatus === 'Approved';
+    const refund = this.normalize(ticket.refundStatus);
+    return refund === 'accepted' || refund === 'approved';
+  }
+
+  private isHiddenFromTicketTabs(ticket: UiBooking): boolean {
+    return this.isCancelled(ticket) && !this.isRefundAccepted(ticket);
+  }
+
+  private isUpcoming(ticket: UiBooking, now = new Date()): boolean {
+    if (
+      !ticket.boardingTimeRaw ||
+      this.isHiddenFromTicketTabs(ticket) ||
+      this.isRefundAccepted(ticket) ||
+      !this.isConfirmed(ticket)
+    ) {
+      return false;
+    }
+
+    const activeStartsAt = new Date(
+      this.parseScheduleLocal(ticket.boardingTimeRaw).getTime() - this.activeBeforeBoardingMs,
+    );
+    return now < activeStartsAt;
+  }
+
+  private isActiveNow(ticket: UiBooking, now = new Date()): boolean {
+    if (
+      !ticket.boardingTimeRaw ||
+      this.isHiddenFromTicketTabs(ticket) ||
+      this.isRefundAccepted(ticket) ||
+      !this.isConfirmed(ticket)
+    ) {
+      return false;
+    }
+
+    const activeStartsAt = new Date(
+      this.parseScheduleLocal(ticket.boardingTimeRaw).getTime() - this.activeBeforeBoardingMs,
+    );
+    return now >= activeStartsAt;
+  }
+
+  private isPast(ticket: UiBooking, now = new Date()): boolean {
+    if (this.isHiddenFromTicketTabs(ticket)) return false;
+    if (this.isRefundAccepted(ticket)) return true;
+    if (!ticket.boardingTimeRaw || !this.isCompleted(ticket)) return false;
+
+    const pastStartsAt = new Date(
+      this.parseScheduleLocal(ticket.boardingTimeRaw).getTime() + this.boardingNowMs,
+    );
+    return now > pastStartsAt;
   }
 
   get myTicketsList(): UiBooking[] {
-    const all = this.state.myTickets.filter(t => t.status !== 'cancelled');
+    return this.visibleTickets;
+  }
+
+  private updateVisibleTickets(): void {
+    const all = this.state.myTickets;
     const now = new Date();
 
     if (this.ticketTab === 'active') {
-      return all.filter(t => this.isActiveNow(t, now) && !this.isRefundAccepted(t) && t.status !== 'sold');
+      this.visibleTickets = all
+        .filter(t => this.isActiveNow(t, now))
+        .sort((a, b) => this.sortByBoardingAsc(a, b));
     } else if (this.ticketTab === 'upcoming') {
-      // Active takes priority - remove active tickets from upcoming
-      const upcoming = all.filter(t =>
-        this.isUpcoming(t, now) &&
-        !this.isActiveNow(t, now) &&
-        !this.isRefundAccepted(t) &&
-        t.status !== 'sold'
-      );
-      
-      // Sort upcoming ascending by date and time
-      return upcoming.sort((a, b) => {
-        const timeA = a.boardingTimeRaw ? new Date(a.boardingTimeRaw).getTime() : 0;
-        const timeB = b.boardingTimeRaw ? new Date(b.boardingTimeRaw).getTime() : 0;
-        return timeA - timeB;
-      });
+      this.visibleTickets = all
+        .filter(t => this.isUpcoming(t, now))
+        .sort((a, b) => this.sortByBoardingAsc(a, b));
     } else {
-      // past
-      return all.filter(t => this.isPast(t, now) && !this.isRefundAccepted(t));
+      this.visibleTickets = all
+        .filter(t => this.isPast(t, now))
+        .sort((a, b) => this.sortByDropoffDesc(a, b));
     }
+  }
+
+  private sortByBoardingAsc(a: UiBooking, b: UiBooking): number {
+    return this.scheduleTime(a.boardingTimeRaw) - this.scheduleTime(b.boardingTimeRaw) || a.id - b.id;
+  }
+
+  private sortByDropoffDesc(a: UiBooking, b: UiBooking): number {
+    return this.scheduleTime(b.dropoffTimeRaw) - this.scheduleTime(a.dropoffTimeRaw) || b.id - a.id;
+  }
+
+  private scheduleTime(value?: string): number {
+    return value ? this.parseScheduleLocal(value).getTime() : 0;
   }
 
   // ─── Countdown ───
@@ -171,19 +242,23 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
         this.countdownMap.set(ticket.id, this.timeUntilBoarding(ticket, now));
       }
     }
+
+    this.updateVisibleTickets();
   }
 
   timeUntilBoarding(ticket: UiBooking, now = new Date()): string {
     if (!ticket.boardingTimeRaw) return '';
     const diffMs = this.parseScheduleLocal(ticket.boardingTimeRaw).getTime() - now.getTime();
-    if (diffMs <= 0) return 'Boarding now';
+    if (diffMs <= 0) return this.language.instant('Boarding now');
 
     const totalMinutes = Math.floor(diffMs / 1000 / 60);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
-    if (hours > 0) return `${hours}h ${minutes}m left`;
-    return `${minutes}m left`;
+    if (hours > 0) {
+      return this.language.instant('{{hours}}h {{minutes}}m left', { hours, minutes });
+    }
+    return this.language.instant('{{minutes}}m left', { minutes });
   }
 
   getCountdown(ticketId: number): string {
@@ -208,6 +283,7 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
     if (ticket.refundStatus === 'Rejected') return 'Refund Rejected';
     if (ticket.isOfferedForResale) return 'Listed on Marketplace';
     if (ticket.status === 'confirmed') return 'Confirmed';
+    if (ticket.status === 'completed') return 'Completed';
     if (ticket.status === 'pending-sale') return 'Offered for Sale';
     if (ticket.status === 'sold') return 'Sold';
     if (ticket.status === 'cancelled') return 'Cancelled';
@@ -278,13 +354,14 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   async confirmRefund(): Promise<void> {
     if (!this.refundTargetTicket || this.isRequestingRefund) return;
 
+    this.actionError = '';
     this.isRequestingRefund = true;
     try {
       await this.state.requestRefund(this.refundTargetTicket.id);
       this.closeRefundDialog();
       await this.refreshTickets();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to request refund');
+      this.actionError = error instanceof Error ? error.message : 'Failed to request refund';
     } finally {
       this.isRequestingRefund = false;
     }
@@ -303,8 +380,9 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   async resellTicket(ticket: UiBooking): Promise<void> {
+    this.actionError = '';
     if (!this.canResellTicket(ticket)) {
-      alert('This ticket cannot be resold.');
+      this.actionError = 'This ticket cannot be resold.';
       return;
     }
 
@@ -321,14 +399,15 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   async cancelListing(ticket: UiBooking): Promise<void> {
     if (!ticket.activeListingId || this.isCancellingListing) return;
 
-    if (!confirm('Are you sure you want to cancel this listing?')) return;
+    if (!confirm(this.language.instant('Are you sure you want to cancel this listing?'))) return;
 
+    this.actionError = '';
     this.isCancellingListing = true;
     try {
       await this.state.cancelListing(ticket.activeListingId);
       await this.refreshTickets();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to cancel listing');
+      this.actionError = error instanceof Error ? error.message : 'Failed to cancel listing';
     } finally {
       this.isCancellingListing = false;
     }
@@ -413,7 +492,7 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
       const name = this.boardingPassPassenger?.name?.replace(/\s+/g, '_') || 'passenger';
       pdf.save(`boarding-pass-${name}.pdf`);
     } catch (error) {
-      alert('Failed to download boarding pass. Please use the Print option instead.');
+      this.actionError = 'Failed to download boarding pass. Please use the Print option instead.';
     }
   }
 
@@ -476,7 +555,7 @@ export class MyTicketsComponent implements OnInit, OnDestroy {
   }
 
   buyTicket(ticket: any): void {
-    if (!confirm('Review the ticket details before continuing to payment. Proceed?')) {
+    if (!confirm(this.language.instant('Review the ticket details before continuing to payment. Proceed?'))) {
       return;
     }
 

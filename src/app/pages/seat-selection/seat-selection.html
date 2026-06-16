@@ -13,8 +13,10 @@
     <div class="agencies">{{ tripInfo?.agencyName }}</div>
   </div>
 
+  <div class="page-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
   <div *ngIf="loading" class="loading">Loading seats...</div>
-  <div *ngIf="!loading && !seatMap" class="no-seats">No seat map available for this trip.</div>
+  <div *ngIf="!loading && !seatMap && !errorMessage" class="no-seats">No seat map available for this trip.</div>
 
   <div *ngIf="!loading && selectedClass" class="bus-layout">
     <div class="bus-header">
@@ -74,7 +76,7 @@
     <div class="selection-footer">
       <div class="footer-left">
         <div class="selected-count">
-          Selected: <strong>{{ selectedSeatsLocal.length }} / {{ state.searchPassengers }}</strong>
+          Selected: <strong>{{ selectedSeatsLocal.length }}</strong>
         </div>
         <div *ngIf="selectedSeatsLocal.length === 0" class="no-selected">No seats selected</div>
         <div *ngIf="selectedSeatsLocal.length > 0" class="seats-list">{{ selectedSeatsLocal.join(', ') }}</div>
@@ -87,7 +89,7 @@
 
     <button
       class="btn btn-primary continue-btn"
-      [disabled]="selectedSeatsLocal.length !== state.searchPassengers"
+      [disabled]="selectedSeatsLocal.length === 0"
       (click)="continue()">
       {{ isLastSeatSelection ? 'Continue' : 'Next Leg' }}
     </button>

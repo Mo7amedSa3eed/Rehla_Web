@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ApiService, CreateSupportTicketRequest, SupportTicketDto } from '../../services/api';
 import { firstValueFrom } from 'rxjs';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 const CATEGORIES = [
   { value: 1, label: 'Payment' },
@@ -16,7 +17,7 @@ const CATEGORIES = [
 @Component({
   selector: 'app-report-issue',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
   templateUrl: './report-issue.html',
   styleUrls: ['./report-issue.scss']
 })

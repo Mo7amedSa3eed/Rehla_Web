@@ -15,6 +15,7 @@ export class SeatSelectionComponent implements OnInit {
   seatMap: any = null;
   selectedSeatsLocal: string[] = [];
   loading = false;
+  errorMessage = '';
   selectedClass: any = null;
   currentLegIndex = 0;
 
@@ -27,7 +28,7 @@ export class SeatSelectionComponent implements OnInit {
     }
 
     // Find first leg that requires seat selection (bus)
-    this.currentLegIndex = this.state.selectedLegs.findIndex(leg => !this.state.isTrainTrip(leg.agencyName || '', leg.transport || ''));
+    this.currentLegIndex = this.state.selectedLegs.findIndex(leg => !this.isTrainLeg(leg));
 
     if (this.currentLegIndex === -1) {
       this.router.navigate(['/passenger-details']);
@@ -40,15 +41,20 @@ export class SeatSelectionComponent implements OnInit {
   async loadSeats() {
     const trip = this.tripInfo;
     this.selectedSeatsLocal = trip.selectedSeats || [];
+    this.errorMessage = '';
     try {
       this.loading = true;
       const map = await this.api.getSeatMap(trip.tripOccurrenceId).toPromise();
       this.seatMap = map;
       if (map && map.classes && map.classes.length > 0) {
-        this.selectedClass = map.classes.find((c: any) => c.coachClassId === trip.coachClassId) || map.classes[0];
+        this.selectedClass = map.classes.find((c: any) => c.coachClassId === trip.coachClassId);
+        if (!this.selectedClass) {
+          this.errorMessage = 'The selected class is no longer available. Please choose another class.';
+        }
       }
-    } catch {
+    } catch (error) {
       this.seatMap = null;
+      this.errorMessage = this.api.formatError(error, 'Could not load seat map for this trip.');
     } finally {
       this.loading = false;
     }
@@ -61,10 +67,6 @@ export class SeatSelectionComponent implements OnInit {
 
     const idx = this.selectedSeatsLocal.indexOf(seatNumber);
     if (idx === -1) {
-      if (this.selectedSeatsLocal.length >= this.state.searchPassengers) {
-        alert(`You can only select ${this.state.searchPassengers} seat(s).`);
-        return;
-      }
       this.selectedSeatsLocal.push(seatNumber);
     } else {
       this.selectedSeatsLocal.splice(idx, 1);
@@ -78,15 +80,45 @@ export class SeatSelectionComponent implements OnInit {
   get seatRows(): { left: SeatDto[]; right: SeatDto[] }[] {
     const seats = this.selectedClass?.seats ?? [];
     const rows: { left: SeatDto[]; right: SeatDto[] }[] = [];
+    const columns = this.columnsForClass(this.selectedClass?.className, this.selectedClass?.layoutType);
+    const rowSize = columns.left + columns.right;
 
-    for (let index = 0; index < seats.length; index += 4) {
+    for (let index = 0; index < seats.length; index += rowSize) {
       rows.push({
-        left: seats.slice(index, index + 2),
-        right: seats.slice(index + 2, index + 4)
+        left: seats.slice(index, index + columns.left),
+        right: seats.slice(index + columns.left, index + rowSize)
       });
     }
 
     return rows;
+  }
+
+  private columnsForClass(className?: string, layoutType?: string | null): { left: number; right: number } {
+    const layoutColumns = this.columnsFromLayoutType(layoutType);
+    if (layoutColumns) {
+      return layoutColumns;
+    }
+
+    return this.extractFloorNumber(className ?? '') === 2
+      ? { left: 1, right: 2 }
+      : { left: 2, right: 2 };
+  }
+
+  private columnsFromLayoutType(layoutType?: string | null): { left: number; right: number } | null {
+    const parts = (layoutType ?? '').split('x');
+    if (parts.length !== 2) {
+      return null;
+    }
+
+    return {
+      left: Number(parts[0]) || 2,
+      right: Number(parts[1]) || 2,
+    };
+  }
+
+  private extractFloorNumber(className: string): number | null {
+    const match = /(?:floor|deck|level)\s*(\d+)/i.exec(className);
+    return match ? Number(match[1]) : null;
   }
 
   goBack(): void {
@@ -95,7 +127,7 @@ export class SeatSelectionComponent implements OnInit {
       let prevIndex = -1;
       for (let i = this.currentLegIndex - 1; i >= 0; i--) {
         const leg = this.state.selectedLegs[i];
-        if (!this.state.isTrainTrip(leg.agencyName || '', leg.transport || '')) {
+        if (!this.isTrainLeg(leg)) {
           prevIndex = i;
           break;
         }
@@ -110,20 +142,25 @@ export class SeatSelectionComponent implements OnInit {
   }
 
   continue(): void {
-    if (this.selectedSeatsLocal.length !== this.state.searchPassengers) {
-      alert(`Please select exactly ${this.state.searchPassengers} seat(s).`);
+    this.errorMessage = '';
+    if (this.selectedSeatsLocal.length === 0) {
+      this.errorMessage = 'Please select at least one seat.';
       return;
     }
 
     this.tripInfo.selectedSeats = [...this.selectedSeatsLocal];
 
     // Find next leg that requires seat selection
-    let nextIndex = this.state.selectedLegs.findIndex((leg, idx) => idx > this.currentLegIndex && !this.state.isTrainTrip(leg.agencyName || '', leg.transport || ''));
+    let nextIndex = this.state.selectedLegs.findIndex((leg, idx) => idx > this.currentLegIndex && !this.isTrainLeg(leg));
 
     if (nextIndex !== -1) {
       this.currentLegIndex = nextIndex;
       this.loadSeats();
     } else {
+      this.state.searchPassengers = Math.max(
+        1,
+        ...this.state.selectedLegs.map((leg) => leg.selectedSeats?.length ?? 0),
+      );
       this.router.navigate(['/passenger-details']);
     }
   }
@@ -133,11 +170,15 @@ export class SeatSelectionComponent implements OnInit {
   }
 
   get isLastSeatSelection() {
-    return this.state.selectedLegs.findIndex((leg, idx) => idx > this.currentLegIndex && !this.state.isTrainTrip(leg.agencyName || '', leg.transport || '')) === -1;
+    return this.state.selectedLegs.findIndex((leg, idx) => idx > this.currentLegIndex && !this.isTrainLeg(leg)) === -1;
   }
 
   get totalPrice(): number {
     if (!this.tripInfo) return 0;
     return this.tripInfo.price * this.selectedSeatsLocal.length;
+  }
+
+  private isTrainLeg(leg: any): boolean {
+    return this.state.isTrainTrip(leg?.rawAgencyName ?? leg?.agencyName ?? '', leg?.transport ?? '');
   }
 }

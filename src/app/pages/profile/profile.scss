@@ -21,6 +21,82 @@
   padding: 24px;
 }
 
+.profile-state-card {
+  max-width: 560px;
+  margin: 48px auto;
+  padding: 32px;
+  text-align: center;
+  background: #112240;
+  border: 1px solid #1E3A52;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  h2 {
+    margin: 0 0 8px;
+    color: #FFFFFF;
+  }
+
+  p {
+    margin: 0 0 18px;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  &.error {
+    border-color: rgba(255, 184, 107, 0.45);
+  }
+}
+
+.profile-state-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #142F4F, #1E3C72, #142F4F);
+  background-size: 200% 100%;
+  border: 1px solid #3180A4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFB86B;
+  font-size: 24px;
+  font-weight: 800;
+  animation: profilePulse 1.3s ease-in-out infinite;
+}
+
+.profile-state-card.error .profile-state-icon {
+  animation: none;
+  background: #142F4F;
+}
+
+.profile-warning {
+  max-width: 900px;
+  margin: 28px auto 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 184, 107, 0.45);
+  border-radius: 12px;
+  background: rgba(255, 184, 107, 0.08);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  button {
+    border: 1px solid #3180A4;
+    border-radius: 8px;
+    background: #1A3045;
+    color: #FFFFFF;
+    padding: 8px 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+
+@keyframes profilePulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ── Profile Header Card (Left Column) ── */
 .profile-card {
   grid-column: 1 / 2;
@@ -299,6 +375,36 @@
   flex-wrap: wrap;
   gap: 16px;
 
+  .language-setting-row {
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: #0F1B2D;
+    border: 1px solid #1E3A52;
+    border-radius: 12px;
+    padding: 16px;
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    strong {
+      color: #fff;
+      font-size: 15px;
+    }
+
+    span {
+      color: #8BA0B8;
+      font-size: 13px;
+      line-height: 18px;
+    }
+  }
+
   .action-btn {
     flex: 1 1 calc(33.333% - 16px);
     min-width: 180px;
@@ -309,7 +415,7 @@
     border-radius: 12px;
     font-size: 15px;
     font-weight: 600;
-    text-align: left;
+    text-align: start;
     cursor: pointer;
     transition: 0.2s;
 

@@ -137,3 +137,27 @@ textarea:focus {
   font-size: 12px;
   font-weight: 600;
 }
+
+.page-language-switch {
+  position: fixed;
+  inset-block-start: 18px;
+  inset-inline-end: 22px;
+  z-index: 20;
+}
+
+[dir='rtl'] {
+  text-align: right;
+}
+
+[dir='rtl'] input,
+[dir='rtl'] select,
+[dir='rtl'] textarea {
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .page-language-switch {
+    inset-block-start: 12px;
+    inset-inline-end: 12px;
+  }
+}

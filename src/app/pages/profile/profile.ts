@@ -1,15 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppStateService } from '../../services/state';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService, WalletHistoryItemDto, SupportTicketDto } from '../../services/api';
 import { firstValueFrom } from 'rxjs';
+import { AuthSessionService } from '../../services/auth-session.service';
+import { LanguageService } from '../../core/i18n/language.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageSwitchComponent } from '../../shared/components/language-switch/language-switch';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, TranslatePipe, LanguageSwitchComponent],
   templateUrl: './profile.html',
   styleUrls: ['./profile.scss']
 })
@@ -38,8 +42,9 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     public state: AppStateService,
-    private readonly router: Router,
+    public language: LanguageService,
     private readonly api: ApiService,
+    private readonly session: AuthSessionService,
   ) {}
 
   logout(): void {
@@ -51,28 +56,13 @@ export class ProfileComponent implements OnInit {
 
     // Call revoke token per spec - treat 400/401 as non-blocking
     try {
-      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+      const refreshToken = this.session.getRefreshToken();
       if (refreshToken) {
         await firstValueFrom(this.api.revokeToken({ refreshToken })).catch(() => undefined);
       }
     } catch { /* non-blocking */ }
 
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      window.history.replaceState({}, '', '/login');
-    }
-
-    this.state.userProfile = {
-      userId: 0, firstName: '', familyName: '', lastName: '', email: '',
-      phone: '', dob: '', gender: '', address: '', city: '', state: '',
-      country: '', countryCode: '', memberSince: '', photo: null,
-      totalTrips: 0, totalDistanceTraveled: 0, walletBalance: 0,
-      loyaltyPointsBalance: 0, expiringPointsAmount: 0, nextExpiryDate: null,
-      hasSetIdentityDetails: false, idType: null, idNumber: null, activeChallenges: [],
-    };
-
-    void this.router.navigate(['/login']);
+    this.session.logoutManually();
   }
 
   cancelLogout(): void {
@@ -80,6 +70,10 @@ export class ProfileComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    await this.reloadProfile();
+  }
+
+  async reloadProfile(): Promise<void> {
     await this.state.loadProfile().catch(() => undefined);
   }
 
@@ -152,7 +146,7 @@ export class ProfileComponent implements OnInit {
       } else if (pagedResult && pagedResult.items) {
         this.supportTickets = pagedResult.items;
       } else {
-        this.supportTicketsError = 'Raw: ' + JSON.stringify(pagedResult);
+        this.supportTicketsError = 'Failed to load support tickets.';
         this.supportTickets = [];
       }
     } catch (e) {
@@ -187,6 +181,18 @@ export class ProfileComponent implements OnInit {
     if (name.includes('trip')) return 'cat-lightblue';
     if (name.includes('payment')) return 'cat-yellow';
     return 'cat-default';
+  }
+
+  ticketTitle(ticket: SupportTicketDto): string {
+    return this.language.currentLanguage === 'ar' && ticket.titleAr?.trim()
+      ? ticket.titleAr.trim()
+      : ticket.title;
+  }
+
+  ticketDescription(ticket: SupportTicketDto): string {
+    return this.language.currentLanguage === 'ar' && ticket.descriptionAr?.trim()
+      ? ticket.descriptionAr.trim()
+      : ticket.description;
   }
 
   onCvvChange(value: string): void {

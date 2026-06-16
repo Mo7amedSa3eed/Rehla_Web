@@ -1,13 +1,36 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Injectable, Injector } from '@angular/core';
+import { LanguageService } from '../core/i18n/language.service';
 import { Observable, catchError, map, throwError } from 'rxjs';
 
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
-  data: T;
+  data: T | null;
   errors: unknown;
+  errorCode?: string | null;
   timestamp: string;
+}
+
+export interface ApiClientError {
+  status?: number;
+  message: string;
+  errors: string[];
+  errorCode?: string | null;
+  isNetworkError: boolean;
+  requiresLogin: boolean;
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly errorCode?: string,
+    public readonly status?: number,
+    public readonly errors?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
 }
 
 export interface AuthUserDto {
@@ -92,10 +115,12 @@ export interface StationDto {
   englishName: string;
   slug: string;
   city: string;
+  governorateAr?: string;
 }
 
 export interface StationGroupDto {
   governorate: string;
+  governorateAr?: string;
   stations: StationDto[];
 }
 
@@ -205,22 +230,37 @@ export interface AddToCartRequest {
 
 export interface CartPassengerDto {
   passengerId?: number;
-  name: string;
-  idNumber: string;
-  seatNumber: string;
+  name?: string;
+  passengerName?: string;
+  idNumber?: string;
+  seatNumber?: string;
 }
 
 export interface CartItemDto {
   bookingId: number;
   totalPrice: number;
   seatsBooked: number;
-  holdExpiresAt: string;
-  agencyName: string;
-  className: string;
-  origin: string;
-  destination: string;
-  boardingTime: string;
-  dropoffTime: string;
+  holdExpiresAt?: string | null;
+  agencyName?: string;
+  agencyNameAr?: string;
+  className?: string;
+  classNameAr?: string;
+  origin?: string;
+  originAr?: string;
+  originStationNameEn?: string;
+  originStationNameAr?: string;
+  originGov?: string;
+  originGovAr?: string;
+  originGovEn?: string;
+  destination?: string;
+  destinationAr?: string;
+  destinationStationNameEn?: string;
+  destinationStationNameAr?: string;
+  destinationGov?: string;
+  destinationGovAr?: string;
+  destinationGovEn?: string;
+  boardingTime?: string | null;
+  dropoffTime?: string | null;
   passengers: CartPassengerDto[];
 }
 
@@ -289,7 +329,9 @@ export interface UserProfileDto {
 export interface UserChallengeDto {
   challengeId: number;
   title: string;
+  titleAr?: string;
   description: string;
+  descriptionAr?: string;
   type: number | string;
   frequency: number | string;
   currentProgress: number;
@@ -334,7 +376,7 @@ export interface WalletDepositRequest {
 }
 
 export interface CheckoutRequest {
-  paymentMethod: 'Wallet' | 'Points';
+  paymentMethod: 'Wallet';
   pointsToRedeem?: number;
 }
 
@@ -343,6 +385,7 @@ export interface WalletHistoryItemDto {
   amount: number;
   type: string;
   description: string;
+  descriptionAr?: string;
   bookingId: number | null;
   createdAt: string;
 }
@@ -370,7 +413,9 @@ export interface CreateSupportTicketRequest {
 export interface SupportTicketDto {
   ticketId: number;
   title: string;
+  titleAr?: string | null;
   description: string;
+  descriptionAr?: string | null;
   category: string;
   status: string;
   createdAt: string;
@@ -415,10 +460,22 @@ export interface PopularRouteDto {
   destinationGov: string;
 }
 
+export interface NotificationDto {
+  id: number;
+  title: string;
+  message: string;
+  titleAr?: string | null;
+  messageAr?: string | null;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export interface LoyaltyHistoryItemDto {
   transactionId: number;
   amount: number;
   description: string;
+  descriptionAr?: string;
   source: string;
   status: string;
   createdAt: string;
@@ -446,7 +503,18 @@ export class ApiService {
   private readonly baseUrl = 'https://rehlabussines2-001-site1.anytempurl.com/api';
   private readonly publicBaseUrl = 'https://rehlabussines2-001-site1.anytempurl.com';
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly injector: Injector
+  ) {}
+
+  private get language(): LanguageService {
+    return this.injector.get(LanguageService);
+  }
+
+  getNotificationsHubUrl(): string {
+    return `${this.publicBaseUrl}/hubs/notifications`;
+  }
 
   getStations(): Observable<StationGroupDto[]> {
     return this.http
@@ -679,23 +747,13 @@ export class ApiService {
       .pipe(map((response) => this.unwrap(response)));
   }
 
-  checkoutWallet(): Observable<string> {
-    return this.http
-      .post<ApiResponse<string>>(
-        `${this.baseUrl}/Bookings/checkout`,
-        { paymentMethod: 'Wallet' },
-        { headers: this.authHeaders() },
-      )
-      .pipe(map((response) => this.unwrap(response)));
-  }
-
-  checkoutPoints(pointsToRedeem: number): Observable<string> {
+  checkout(payload: CheckoutRequest = { paymentMethod: 'Wallet', pointsToRedeem: 0 }): Observable<string> {
     return this.http
       .post<ApiResponse<string>>(
         `${this.baseUrl}/Bookings/checkout`,
         {
-          paymentMethod: 'Points',
-          pointsToRedeem,
+          paymentMethod: 'Wallet',
+          pointsToRedeem: payload.pointsToRedeem ?? 0,
         },
         { headers: this.authHeaders() },
       )
@@ -712,7 +770,7 @@ export class ApiService {
 
   cancelCartHold(bookingId: number): Observable<void> {
     return this.http
-      .delete<ApiResponse<null>>(`${this.baseUrl}/Bookings/bookings/${bookingId}`, {
+      .delete<ApiResponse<null>>(`${this.baseUrl}/Bookings/${bookingId}`, {
         headers: this.authHeaders(),
       })
       .pipe(
@@ -733,6 +791,26 @@ export class ApiService {
   updateMyProfile(payload: UpdateProfileRequest): Observable<void> {
     return this.http
       .put<ApiResponse<null>>(`${this.baseUrl}/Users/me`, payload, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => {
+        this.unwrap(response);
+      }));
+  }
+
+  updateProfile(payload: UpdateProfileRequest): Observable<void> {
+    return this.http
+      .put<ApiResponse<null>>(`${this.baseUrl}/Auth/me`, payload, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => {
+        this.unwrap(response);
+      }));
+  }
+
+  updatePreferredLanguage(language: string): Observable<void> {
+    return this.http
+      .put<ApiResponse<null>>(`${this.baseUrl}/Users/language`, { language }, {
         headers: this.authHeaders(),
       })
       .pipe(map((response) => {
@@ -890,6 +968,43 @@ export class ApiService {
       .pipe(map((response) => this.unwrap(response)));
   }
 
+  getNotifications(limit = 50): Observable<NotificationDto[]> {
+    return this.http
+      .get<ApiResponse<NotificationDto[]>>(`${this.baseUrl}/Notifications`, {
+        headers: this.authHeaders(),
+        params: new HttpParams().set('limit', String(limit)),
+      })
+      .pipe(map((response) => this.unwrap(response) ?? []));
+  }
+
+  markNotificationRead(id: string): Observable<void> {
+    return this.http
+      .patch<ApiResponse<null>>(`${this.baseUrl}/Notifications/${id}/read`, null, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => {
+        this.unwrap(response);
+      }));
+  }
+
+  markAllNotificationsRead(): Observable<void> {
+    return this.http
+      .patch<ApiResponse<null>>(`${this.baseUrl}/Notifications/read-all`, null, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => {
+        this.unwrap(response);
+      }));
+  }
+
+  deleteNotification(id: string): Observable<string | null> {
+    return this.http
+      .delete<ApiResponse<string>>(`${this.baseUrl}/Notifications/${id}`, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((response) => this.unwrap(response)));
+  }
+
   getLoyaltyHistory(params?: { pageNumber?: number; pageSize?: number }): Observable<LoyaltyHistoryPagedDto> {
     let httpParams = new HttpParams();
     if (params) {
@@ -964,14 +1079,146 @@ export class ApiService {
 
   private unwrap<T>(response: ApiResponse<T>): T {
     if (response.success) {
-      return response.data;
+      return response.data as T;
     }
 
-    const message = Array.isArray(response.errors)
-      ? response.errors.join(', ')
-      : response.message || 'Request failed';
+    throw new ApiError(
+      this.extractApiMessage(response),
+      response.errorCode ?? undefined,
+      undefined,
+      response.errors,
+    );
+  }
 
-    throw new Error(message);
+  formatError(error: unknown, fallback = 'Request failed'): string {
+    return this.toClientError(error, fallback).message;
+  }
+
+  toClientError(error: unknown, fallback = 'Request failed'): ApiClientError {
+    if (error instanceof ApiError) {
+      return {
+        status: error.status,
+        message: error.message || fallback,
+        errors: this.toErrorList(error.errors),
+        errorCode: error.errorCode ?? null,
+        isNetworkError: false,
+        requiresLogin: error.status === 401,
+      };
+    }
+
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 0) {
+        return {
+          status: 0,
+          message: this.language.instant('Network connection failed. Please check your internet connection'),
+          errors: [],
+          errorCode: null,
+          isNetworkError: true,
+          requiresLogin: false,
+        };
+      }
+
+      const response = error.error as Partial<ApiResponse<unknown>> | string | null;
+      if (response && typeof response === 'object') {
+        return {
+          status: error.status,
+          message: this.extractApiMessage(response, this.fallbackMessageForStatus(error.status)),
+          errors: this.toErrorList(response.errors),
+          errorCode: response.errorCode ?? null,
+          isNetworkError: false,
+          requiresLogin: error.status === 401,
+        };
+      }
+
+      return {
+        status: error.status,
+        message: this.fallbackMessageForStatus(error.status),
+        errors: [],
+        errorCode: null,
+        isNetworkError: false,
+        requiresLogin: error.status === 401,
+      };
+    }
+
+    return {
+      message: error instanceof Error ? error.message : fallback,
+      errors: [],
+      errorCode: null,
+      isNetworkError: false,
+      requiresLogin: false,
+    };
+  }
+
+  cartUserMessage(error: unknown): string {
+    const clientError = this.toClientError(error);
+
+    if (clientError.requiresLogin) return 'Please login to continue.';
+    if (clientError.errorCode === 'VALIDATION_ERROR') return clientError.errors[0] ?? clientError.message;
+    if (clientError.errorCode === 'INSUFFICIENT_WALLET_BALANCE') {
+      return 'Your wallet balance is not enough to complete checkout.';
+    }
+    if (clientError.errorCode === 'SEAT_ALREADY_BOOKED') {
+      return 'One or more selected seats are no longer available. Refresh the cart or choose another trip.';
+    }
+    if (clientError.status === 409) {
+      return 'Your cart changed before checkout completed. Refresh the cart and try again.';
+    }
+    if (clientError.status === 400) return clientError.errors[0] ?? clientError.message;
+
+    return clientError.message;
+  }
+
+  private extractApiMessage(response: Partial<ApiResponse<unknown>>, fallback = 'Request failed'): string {
+    const localize = (msg: string) => {
+      const cleanMsg = msg.trim().replace(/\.$/, '');
+      return this.language.instant(cleanMsg);
+    };
+
+    if (Array.isArray(response.errors) && response.errors.length) {
+      return response.errors.map((item) => localize(String(item))).join(', ');
+    }
+
+    if (response.errors && typeof response.errors === 'object') {
+      const values = Object.values(response.errors as Record<string, unknown>).flat();
+      if (values.length) {
+        return values.map((item) => localize(String(item))).join(', ');
+      }
+    }
+
+    return localize(response.message || fallback);
+  }
+
+  private toErrorList(errors: unknown): string[] {
+    if (Array.isArray(errors)) {
+      return errors.map((item) => String(item));
+    }
+
+    if (errors && typeof errors === 'object') {
+      return Object.values(errors as Record<string, unknown>)
+        .flat()
+        .map((item) => String(item));
+    }
+
+    return [];
+  }
+
+  private fallbackMessageForStatus(status?: number): string {
+    switch (status) {
+      case 400:
+        return this.language.instant('The request could not be completed. Please review the entered data');
+      case 401:
+        return this.language.instant('Please login to continue');
+      case 403:
+        return this.language.instant('You do not have permission to perform this action');
+      case 404:
+        return this.language.instant('The requested item was not found');
+      case 409:
+        return this.language.instant('This booking changed while you were checking out. Please refresh and try again');
+      case 500:
+        return this.language.instant('Server error. Please try again later');
+      default:
+        return this.language.instant('Request failed. Please try again');
+    }
   }
 
   private authHeaders(): HttpHeaders {

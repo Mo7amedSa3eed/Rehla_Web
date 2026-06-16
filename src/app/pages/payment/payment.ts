@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppStateService } from '../../services/state';
+import { ApiService } from '../../services/api';
 
 @Component({
   selector: 'app-payment',
@@ -15,9 +16,10 @@ export class PaymentComponent implements OnInit {
 
   paymentMethod: 'wallet' | 'points' = 'wallet';
   isSubmitting = false;
+  errorMessage = '';
   readonly pointsPerEgp = 10;
 
-  constructor(public state: AppStateService, private router: Router) {}
+  constructor(public state: AppStateService, private router: Router, private api: ApiService) {}
 
   async ngOnInit(): Promise<void> {
     await this.state.loadProfile().catch(() => undefined);
@@ -40,6 +42,7 @@ export class PaymentComponent implements OnInit {
       return;
     }
 
+    this.errorMessage = '';
     this.isSubmitting = true;
 
     try {
@@ -50,8 +53,7 @@ export class PaymentComponent implements OnInit {
       }
       await this.router.navigate(['/my-tickets']);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Payment failed';
-      alert(message);
+      this.errorMessage = this.api.formatError(error, 'Payment failed.');
     } finally {
       this.isSubmitting = false;
     }

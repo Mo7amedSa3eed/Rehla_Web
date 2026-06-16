@@ -1,70 +1,77 @@
 <div class="container trips-page">
 
   <div class="trips-header-row">
-    <h2 class="title">
-      <ng-container *ngIf="state.searchQueries.length > 1">
-        Select Leg {{state.currentLegIndex + 1}} of {{state.searchQueries.length}}
-      </ng-container>
-      <ng-container *ngIf="state.searchQueries.length <= 1">
-        Available Trips
-      </ng-container>
-    </h2>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <button class="back-btn" style="background: none; border: none; color: #00E5FF; font-size: 20px; cursor: pointer; padding: 0;" *ngIf="state.currentLegIndex > 0" (click)="goBackOneLeg()" title="Back to previous leg">
+        ←
+      </button>
+      <h2 class="title" style="margin: 0;">
+        <ng-container *ngIf="state.searchQueries.length > 1">
+          {{ 'Select Leg {{index}} of {{total}}' | t : { index: state.currentLegIndex + 1, total: state.searchQueries.length } }}
+        </ng-container>
+        <ng-container *ngIf="state.searchQueries.length <= 1">
+          {{ 'Available Trips' | t }}
+        </ng-container>
+      </h2>
+    </div>
 
     <div class="header-actions">
       <label class="indirect-toggle" *ngIf="state.searchQueries.length <= 1">
         <input type="checkbox" [checked]="showIndirect" (change)="toggleIndirect()">
-        Show Indirect Trips
+        {{ 'Show Indirect Trips' | t }}
       </label>
       <button class="filter-toggle-btn" (click)="showFilters = true" id="filter-toggle-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
         </svg>
-        Filters
+        {{ 'Filters' | t }}
       </button>
     </div>
   </div>
+
+  <div class="page-error" *ngIf="actionError">{{ actionError }}</div>
 
   <div class="trips-layout">
     
     <!-- Filter Sidebar (desktop sticky, mobile slide-in) -->
     <div class="filter-panel" [class.active]="showFilters" id="filter-panel">
       <div class="filter-panel-header">
-        <h3 class="filter-panel-title">Filters</h3>
-        <button class="filter-reset-btn" (click)="resetFilters()" id="filter-reset-btn">Reset</button>
+        <h3 class="filter-panel-title">{{ 'Filters' | t }}</h3>
+        <button class="filter-reset-btn" (click)="resetFilters()" id="filter-reset-btn">{{ 'Reset All' | t }}</button>
       </div>
 
       <!-- Sort By -->
       <div class="filter-section">
-        <h4 class="filter-section-title">Sort By</h4>
+        <h4 class="filter-section-title">{{ 'Sort By' | t }}</h4>
         <div class="filter-chips">
           <button class="filter-chip" [class.active]="filterSortBy === 'price'" (click)="filterSortBy = 'price'" id="sort-price">
-            Price (Low to High)
+            {{ 'Price (Low to High)' | t }}
           </button>
           <button class="filter-chip" [class.active]="filterSortBy === 'duration'" (click)="filterSortBy = 'duration'" id="sort-duration">
-            Duration (Shortest first)
+            {{ 'Duration (Shortest first)' | t }}
           </button>
           <button class="filter-chip" [class.active]="filterSortBy === 'departure'" (click)="filterSortBy = 'departure'" id="sort-departure">
-            Departure Time (Earliest first)
+            {{ 'Departure Time (Earliest first)' | t }}
           </button>
         </div>
       </div>
 
       <!-- Transport Mode -->
       <div class="filter-section">
-        <h4 class="filter-section-title">Choose Transportation Mode</h4>
+        <h4 class="filter-section-title">{{ 'Choose Transportation Mode' | t }}</h4>
         <div class="transport-grid">
           <div class="transport-card" [class.active]="filterTransport === 'all'" (click)="filterTransport = 'all'">
             <div class="icon">🌍</div>
-            <span>All</span>
+            <span>{{ 'All' | t }}</span>
           </div>
           <div class="transport-card" [class.active]="filterTransport === 'bus'" (click)="filterTransport = 'bus'">
             <div class="icon bus">🚌</div>
-            <span>Bus</span>
+            <span>{{ 'Bus' | t }}</span>
           </div>
           <div class="transport-card" [class.active]="filterTransport === 'train'" (click)="filterTransport = 'train'">
             <div class="icon train">🚆</div>
-            <span>Train</span>
+            <span>{{ 'Train' | t }}</span>
           </div>
         </div>
       </div>
@@ -72,31 +79,31 @@
       <!-- Max Price -->
       <div class="filter-section">
         <div class="filter-section-header">
-          <h4 class="filter-section-title">Max Price</h4>
-          <span class="filter-value-label">EGP {{filterMaxPrice}}</span>
+          <h4 class="filter-section-title">{{ 'Max Price' | t }}</h4>
+          <span class="filter-value-label">{{ 'EGP' | t }} {{filterMaxPrice}}</span>
         </div>
         <input type="range" class="filter-slider" 
                min="0" [max]="maxPriceLimit" step="50" 
                [(ngModel)]="filterMaxPrice">
         <div class="filter-slider-labels">
-          <span>EGP 0</span>
-          <span>EGP {{maxPriceLimit}}</span>
+          <span>{{ 'EGP' | t }} 0</span>
+          <span>{{ 'EGP' | t }} {{maxPriceLimit}}</span>
         </div>
       </div>
 
       <!-- Departure Time -->
       <div class="filter-section">
-        <h4 class="filter-section-title">Departure Time</h4>
+        <h4 class="filter-section-title">{{ 'Departure Time' | t }}</h4>
         <div class="filter-time-row">
           <div class="filter-time-input">
             <div class="filter-time-content">
-              <span class="filter-time-label">From</span>
+              <span class="filter-time-label">{{ 'From' | t }}</span>
               <input type="time" [(ngModel)]="filterDepartureFrom">
             </div>
           </div>
           <div class="filter-time-input">
             <div class="filter-time-content">
-              <span class="filter-time-label">To</span>
+              <span class="filter-time-label">{{ 'To' | t }}</span>
               <input type="time" [(ngModel)]="filterDepartureTo">
             </div>
           </div>
@@ -105,17 +112,17 @@
 
       <!-- Arrival Time -->
       <div class="filter-section">
-        <h4 class="filter-section-title">Arrival Time</h4>
+        <h4 class="filter-section-title">{{ 'Arrival Time' | t }}</h4>
         <div class="filter-time-row">
           <div class="filter-time-input">
             <div class="filter-time-content">
-              <span class="filter-time-label">From</span>
+              <span class="filter-time-label">{{ 'From' | t }}</span>
               <input type="time" [(ngModel)]="filterArrivalFrom">
             </div>
           </div>
           <div class="filter-time-input">
             <div class="filter-time-content">
-              <span class="filter-time-label">To</span>
+              <span class="filter-time-label">{{ 'To' | t }}</span>
               <input type="time" [(ngModel)]="filterArrivalTo">
             </div>
           </div>
@@ -124,22 +131,22 @@
 
       <!-- Apply Button -->
       <button class="filter-apply-btn" (click)="applyFilters()" id="filter-apply-btn">
-        Apply Filters
+        {{ 'Apply Filters' | t }}
       </button>
     </div>
 
     <!-- Main Content -->
     <div class="trips-content">
       <div *ngIf="isSubmitting" class="loading-state">
-        <p>Loading next leg...</p>
+        <p>{{ 'Loading next leg...' | t }}</p>
       </div>
 
       <ng-container *ngIf="!isSubmitting">
         <!-- DIRECT TRIPS -->
         <ng-container *ngIf="!showIndirect">
           <div *ngIf="state.searchResults.length === 0" class="no-results">
-            <p>No direct trips to display.</p>
-            <span *ngIf="state.searchQueries.length <= 1">Try enabling "Show Indirect Trips" above.</span>
+            <p>{{ 'No direct trips to display' | t }}.</p>
+            <span *ngIf="state.searchQueries.length <= 1">{{ 'Try enabling Show Indirect Trips above' | t }}.</span>
           </div>
 
           <div *ngFor="let trip of filteredResults" class="trip-card card">
@@ -150,25 +157,25 @@
                 <span class="city">{{trip.to}}</span>
               </div>
               <div class="price">
-                From {{trip.price}} EGP
+                {{ 'From' | t }} {{trip.price}} {{ 'EGP' | t }}
               </div>
             </div>
 
             <div class="trip-meta-row">
-              <span>Agency: {{trip.agencyName}}</span>
-              <span>Occurrence ID: {{trip.tripOccurrenceId}}</span>
+              <span>{{ 'Agency' | t }}: {{trip.agencyName}}</span>
+              <span>{{ 'Occurrence ID' | t }}: {{trip.tripOccurrenceId}}</span>
             </div>
 
             <div class="trip-details">
               <span>📅 {{trip.date}}</span>
-              <span>🕒 Boarding {{trip.time}}</span>
-              <span>🕒 Dropoff {{trip.dropoffTime}}</span>
+              <span>🕒 {{ 'Boarding' | t }} {{trip.time}}</span>
+              <span>🕒 {{ 'Dropoff' | t }} {{trip.dropoffTime}}</span>
               <span>⏱ {{trip.duration}}</span>
             </div>
 
             <div class="trip-stops" *ngIf="trip.routeStops && trip.routeStops.length > 0">
               <div class="stops-toggle" (click)="trip.showStops = !trip.showStops">
-                <span>📍 Route Stops ({{trip.routeStops.length}})</span>
+                <span>📍 {{ 'Route Stops' | t }} ({{trip.routeStops.length}})</span>
                 <span class="toggle-icon">{{ trip.showStops ? '▲' : '▼' }}</span>
               </div>
               <div class="stops-list" *ngIf="trip.showStops">
@@ -180,9 +187,9 @@
                   <div class="stop-info">
                     <span class="stop-name">{{stop.stationName}}</span>
                     <span class="stop-time">
-                      <ng-container *ngIf="stop.arrivalTime">Arr: {{stop.arrivalTime}}</ng-container>
+                      <ng-container *ngIf="stop.arrivalTime">{{ 'Arr' | t }}: {{stop.arrivalTime}}</ng-container>
                       <ng-container *ngIf="stop.arrivalTime && stop.departureTime"> • </ng-container>
-                      <ng-container *ngIf="stop.departureTime">Dep: {{stop.departureTime}}</ng-container>
+                      <ng-container *ngIf="stop.departureTime">{{ 'Dep' | t }}: {{stop.departureTime}}</ng-container>
                     </span>
                   </div>
                 </div>
@@ -190,9 +197,22 @@
             </div>
 
             <div class="trip-footer">
-              <span class="seats">{{trip.seats}} seats available in {{trip.className}}</span>
-              <button class="select-btn btn btn-primary" (click)="selectTrip(trip)">
-                Select Trip
+              <span class="seats">{{trip.seats}} {{ 'seats available in' | t }} {{trip.className}}</span>
+              <label class="class-select-label" *ngIf="trip.availableClasses.length > 1">
+                <span>{{ 'Class' | t }}</span>
+                <select
+                  [ngModel]="trip.coachClassId"
+                  (ngModelChange)="selectClassIdForTrip(trip, $event)">
+                  <option
+                    *ngFor="let cls of trip.availableClasses; let classIndex = index"
+                    [ngValue]="cls.coachClassId"
+                    [disabled]="cls.remainingSeats <= 0">
+                    {{ classOptionLabel(trip, cls, classIndex) }}
+                  </option>
+                </select>
+              </label>
+              <button class="select-btn btn btn-primary" [disabled]="trip.seats <= 0" (click)="selectTrip(trip)">
+                {{ 'Select Trip' | t }}
               </button>
             </div>
           </div>
@@ -200,11 +220,11 @@
           <!-- Pagination Controls -->
           <div class="pagination-controls" *ngIf="state.searchTripsTotalPages > 1">
             <button class="btn btn-secondary" (click)="prevPage()" [disabled]="state.searchTripsCurrentPage <= 1">
-              &larr; Previous
+              ← {{ 'Previous' | t }}
             </button>
-            <span class="page-info">Page {{state.searchTripsCurrentPage}} of {{state.searchTripsTotalPages}}</span>
+            <span class="page-info">{{ 'Page' | t }} {{state.searchTripsCurrentPage}} {{ 'of' | t }} {{state.searchTripsTotalPages}}</span>
             <button class="btn btn-secondary" (click)="nextPage()" [disabled]="state.searchTripsCurrentPage >= state.searchTripsTotalPages">
-              Next &rarr;
+              {{ 'Next' | t }} →
             </button>
           </div>
 
@@ -213,11 +233,11 @@
         <!-- INDIRECT TRIPS -->
         <ng-container *ngIf="showIndirect">
           <div *ngIf="isSearchingIndirect" class="loading-state">
-            <p>Searching for indirect routes...</p>
+            <p>{{ 'Searching for indirect routes...' | t }}</p>
           </div>
 
           <div *ngIf="!isSearchingIndirect && state.indirectSearchResults.length === 0" class="no-results">
-            <p>No indirect trips found.</p>
+            <p>{{ 'No indirect trips found' | t }}.</p>
           </div>
 
           <div *ngFor="let indirect of state.indirectSearchResults" class="trip-card indirect-card card">
@@ -225,36 +245,36 @@
               <div class="route">
                 <span class="city">{{indirect.legs[0].originGovernorate}}</span>
                 <span class="arrow">›</span>
-                <span class="city" style="color: #666; font-size: 0.8em; margin: 0 5px;">(1 Stop)</span>
+                <span class="city" style="color: #666; font-size: 0.8em; margin: 0 5px;">(1 {{ 'Stop' | t }})</span>
                 <span class="arrow">›</span>
                 <span class="city">{{indirect.legs[1].destinationGovernorate}}</span>
               </div>
               <div class="price">
-                Total From {{indirect.totalStartingPrice}} EGP
+                {{ 'Total From' | t }} {{indirect.totalStartingPrice}} {{ 'EGP' | t }}
               </div>
             </div>
 
             <div class="trip-meta-row">
-              <span>Total Duration: {{indirect.totalDurationMinutes}}m</span>
-              <span>Layover: {{indirect.layoverDurationMinutes}}m</span>
+              <span>{{ 'Total Duration' | t }}: {{indirect.totalDurationMinutes}}m</span>
+              <span>{{ 'Layover' | t }}: {{indirect.layoverDurationMinutes}}m</span>
             </div>
 
             <div class="indirect-legs">
               <div class="leg">
-                <h5>Leg 1: {{indirect.legs[0].agencyName}}</h5>
+                <h5>{{ 'Leg' | t }} 1: {{indirect.legs[0].agencyName}}</h5>
                 <p>{{indirect.legs[0].departureTime}} - {{indirect.legs[0].arrivalTime}}</p>
-                <p>{{indirect.legs[0].originStationName}} to {{indirect.legs[0].destinationStationName}}</p>
+                <p>{{indirect.legs[0].originStationName}} {{ 'to' | t }} {{indirect.legs[0].destinationStationName}}</p>
               </div>
               <div class="leg">
-                <h5>Leg 2: {{indirect.legs[1].agencyName}}</h5>
+                <h5>{{ 'Leg' | t }} 2: {{indirect.legs[1].agencyName}}</h5>
                 <p>{{indirect.legs[1].departureTime}} - {{indirect.legs[1].arrivalTime}}</p>
-                <p>{{indirect.legs[1].originStationName}} to {{indirect.legs[1].destinationStationName}}</p>
+                <p>{{indirect.legs[1].originStationName}} {{ 'to' | t }} {{indirect.legs[1].destinationStationName}}</p>
               </div>
             </div>
 
             <div class="trip-footer">
               <button class="select-btn btn btn-primary" (click)="selectIndirectTrip(indirect)">
-                Select Both Legs
+                {{ 'Select Both Legs' | t }}
               </button>
             </div>
           </div>

@@ -2,29 +2,29 @@
 
   <!-- Top Summary Card -->
   <div class="hub-header card">
-    <button class="back-btn" routerLink="/profile">← Back</button>
+    <button class="back-btn" routerLink="/profile">← {{ 'Back' | t }}</button>
     <div class="hub-summary">
       <div class="hub-points">
-        <span class="hub-pts-label">Your Points</span>
+        <span class="hub-pts-label">{{ 'Your Points' | t }}</span>
         <strong class="hub-pts-value">{{ userProfile.loyaltyPointsBalance | number:'1.0-0' }}</strong>
       </div>
       <div class="hub-expiry" *ngIf="userProfile.expiringPointsAmount > 0">
-        <span>⚠️ {{ userProfile.expiringPointsAmount | number:'1.0-0' }} pts expiring</span>
-        <span *ngIf="userProfile.nextExpiryDate">on {{ userProfile.nextExpiryDate | date:'mediumDate' }}</span>
+        <span>⚠️ {{ userProfile.expiringPointsAmount | number:'1.0-0' }} {{ 'pts expiring' | t }}</span>
+        <span *ngIf="userProfile.nextExpiryDate">{{ 'on' | t }} {{ userProfile.nextExpiryDate | date:'mediumDate':'':language.currentLocale }}</span>
       </div>
     </div>
   </div>
 
-  <div *ngIf="isLoading" class="loading-state">Loading Loyalty Hub...</div>
-  <div *ngIf="!isLoading && loadError" class="error-state">{{ loadError }}</div>
+  <div *ngIf="isLoading" class="loading-state">{{ 'Loading Loyalty Hub...' | t }}</div>
+  <div *ngIf="!isLoading && loadError" class="error-state">{{ loadError | t }}</div>
 
   <!-- Tabs -->
   <div class="hub-tabs" *ngIf="!isLoading">
     <button class="hub-tab" [class.active]="activeTab === 'challenges'" (click)="selectTab('challenges')">
-      🏆 Challenges
+      🏆 {{ 'Challenges' | t }}
     </button>
     <button class="hub-tab" [class.active]="activeTab === 'history'" (click)="selectTab('history')">
-      📋 Points History
+      📋 {{ 'Points History' | t }}
     </button>
   </div>
 
@@ -33,24 +33,24 @@
 
     <div class="filter-chips">
       <button class="chip" [class.active]="challengeFilter === 'active'"
-        (click)="selectFilter('active')">Active</button>
+        (click)="selectFilter('active')">{{ 'Active' | t }}</button>
       <button class="chip" [class.active]="challengeFilter === 'completed'"
-        (click)="selectFilter('completed')">Completed</button>
+        (click)="selectFilter('completed')">{{ 'Completed' | t }}</button>
     </div>
 
     <div *ngIf="challenges.length === 0 && !loadError" class="empty-state">
-      No {{ challengeFilter }} challenges found.
+      {{ (challengeFilter === 'active' ? 'No active challenges found.' : 'No completed challenges found.') | t }}
     </div>
 
     <ng-template #challengeCard let-c="challenge">
       <article class="challenge-card card">
         <div class="challenge-header">
           <div>
-            <h3>{{ c.title }}</h3>
-            <p class="muted" *ngIf="c.description">{{ c.description }}</p>
+            <h3>{{ language.currentLanguage === 'ar' && c.titleAr ? c.titleAr : c.title }}</h3>
+            <p class="muted" *ngIf="c.description || c.descriptionAr">{{ language.currentLanguage === 'ar' && c.descriptionAr ? c.descriptionAr : c.description }}</p>
           </div>
           <span class="status-badge" [class.completed]="c.isCompleted">
-            {{ c.isCompleted ? '✅ Done' : '⏳ In Progress' }}
+            {{ (c.isCompleted ? 'Done' : 'In Progress') | t }}
           </span>
         </div>
         <div class="progress-bar-wrap">
@@ -58,14 +58,14 @@
         </div>
         <div class="challenge-footer">
           <span>{{ c.currentProgress }} / {{ c.goalValue }}</span>
-          <span class="reward-badge">+{{ c.rewardPoints }} pts</span>
+          <span class="reward-badge">+{{ c.rewardPoints }} {{ 'pts' | t }}</span>
         </div>
       </article>
     </ng-template>
 
     <!-- One-Time Challenges -->
     <div *ngIf="oneTimeChallenges.length > 0" class="challenge-category">
-      <h2 class="category-title">One-Time Challenges</h2>
+      <h2 class="category-title">{{ 'One-Time Challenges' | t }}</h2>
       <div class="challenge-grid">
         <ng-container *ngFor="let c of oneTimeChallenges">
           <ng-container *ngTemplateOutlet="challengeCard; context: { challenge: c }"></ng-container>
@@ -75,7 +75,7 @@
 
     <!-- Monthly Challenges -->
     <div *ngIf="monthlyChallenges.length > 0" class="challenge-category">
-      <h2 class="category-title">Monthly Challenges</h2>
+      <h2 class="category-title">{{ 'Monthly Challenges' | t }}</h2>
       <div class="challenge-grid">
         <ng-container *ngFor="let c of monthlyChallenges">
           <ng-container *ngTemplateOutlet="challengeCard; context: { challenge: c }"></ng-container>
@@ -85,7 +85,7 @@
 
     <!-- Other Challenges -->
     <div *ngIf="otherChallenges.length > 0" class="challenge-category">
-      <h2 class="category-title" *ngIf="oneTimeChallenges.length > 0 || monthlyChallenges.length > 0">Other Challenges</h2>
+      <h2 class="category-title" *ngIf="oneTimeChallenges.length > 0 || monthlyChallenges.length > 0">{{ 'Other Challenges' | t }}</h2>
       <div class="challenge-grid">
         <ng-container *ngFor="let c of otherChallenges">
           <ng-container *ngTemplateOutlet="challengeCard; context: { challenge: c }"></ng-container>
@@ -95,33 +95,33 @@
 
     <button class="btn btn-outline load-more-btn" *ngIf="hasMoreChallenges" [disabled]="isLoadingMoreChallenges"
       (click)="loadMoreChallenges()">
-      {{ isLoadingMoreChallenges ? 'Loading...' : 'Load More' }}
+      {{ (isLoadingMoreChallenges ? 'Loading...' : 'Load More') | t }}
     </button>
   </div>
 
   <!-- ── Points History Tab ─────────────────────────────────────────── -->
   <div *ngIf="!isLoading && activeTab === 'history'" class="tab-content">
-    <div *ngIf="historyError" class="error-state">{{ historyError }}</div>
+    <div *ngIf="historyError" class="error-state">{{ historyError | t }}</div>
 
     <div *ngIf="pointHistory.length === 0 && !historyError" class="empty-state">
-      No point transactions found.
+      {{ 'No point transactions found.' | t }}
     </div>
 
     <div class="history-list">
       <div class="history-item card" *ngFor="let tx of pointHistory">
         <div class="history-info">
-          <span class="history-desc">{{ tx.description }}</span>
-          <span class="history-meta">{{ tx.source }} &bull; {{ tx.createdAt | date:'mediumDate' }}</span>
+          <span class="history-desc">{{ language.currentLanguage === 'ar' && tx.descriptionAr ? tx.descriptionAr : tx.description }}</span>
+          <span class="history-meta">{{ tx.source | t }} &bull; {{ tx.createdAt | date:'mediumDate':'':language.currentLocale }}</span>
         </div>
         <span class="history-amount" [class.credit]="tx.amount > 0" [class.debit]="tx.amount < 0">
-          {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount }} pts
+          {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount }} {{ 'pts' | t }}
         </span>
       </div>
     </div>
 
     <button class="btn btn-outline load-more-btn" *ngIf="hasMoreHistory" [disabled]="isLoadingMoreHistory"
       (click)="loadMoreHistory()">
-      {{ isLoadingMoreHistory ? 'Loading...' : 'Load More' }}
+      {{ (isLoadingMoreHistory ? 'Loading...' : 'Load More') | t }}
     </button>
   </div>
 

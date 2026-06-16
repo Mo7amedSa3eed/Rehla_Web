@@ -1,10 +1,13 @@
 
 <div class="container">
   <section class="hero">
-    <h1>Welcome to Rihla</h1>
-    <p>Your trusted partner for all transportation needs</p>
+    <h1>{{ 'Welcome to Rihla' | t }}</h1>
+    <p>{{ 'Your trusted partner for all transportation needs' | t }}</p>
   </section>
 </div>
+
+<!-- Popular Routes Component -->
+<app-popular-routes></app-popular-routes>
 
 
 <div class="container">
@@ -12,28 +15,25 @@
 
     <div class="feature-card card">
       <div class="icon purple">🚌</div>
-      <h3>Multiple Transport Options</h3>
+      <h3>{{ 'Multiple Transport Options' | t }}</h3>
       <p>
-        Choose from buses and trains to suit your
-        travel preferences and budget.
+        {{ 'Choose from buses and trains to suit your travel preferences and budget' | t }}
       </p>
     </div>
 
     <div class="feature-card card">
       <div class="icon green">💰</div>
-      <h3>Best Prices Guaranteed</h3>
+      <h3>{{ 'Best Prices Guaranteed' | t }}</h3>
       <p>
-        Compare prices across multiple providers and
-        get the best deals for your journey.
+        {{ 'Compare prices across multiple providers and get the best deals for your journey' | t }}
       </p>
     </div>
 
     <div class="feature-card card">
       <div class="icon orange">🔒</div>
-      <h3>Secure & Easy Booking</h3>
+      <h3>{{ 'Secure & Easy Booking' | t }}</h3>
       <p>
-        Book your tickets safely with our secure payment
-        system and user-friendly interface.
+        {{ 'Book your tickets safely with our secure payment system and user-friendly interface' | t }}
       </p>
     </div>
 
@@ -43,8 +43,8 @@
 
 <div class="container">
   <section class="cta">
-    <h2>Ready to Start Your Journey?</h2>
-    <p>Book your next trip in just a few clicks</p>
-    <button class="btn btn-primary" routerLink="/booking">Book Now</button>
+    <h2>{{ 'Ready to Start Your Journey?' | t }}</h2>
+    <p>{{ 'Book your next trip in just a few clicks' | t }}</p>
+    <button class="btn btn-primary" routerLink="/booking">{{ 'Book Now' | t }}</button>
   </section>
 </div>

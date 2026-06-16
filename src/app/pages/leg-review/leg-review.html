@@ -1,0 +1,171 @@
+<div class="leg-review-page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">←</button>
+    <div class="header-text">
+      <h1 class="page-title">{{ 'Review Your Trips' | t }}</h1>
+      <p class="page-subtitle">{{ '{{count}} legs selected' | t: { count: state.selectedLegs.length } }}</p>
+    </div>
+  </div>
+
+
+  <div class="page-error" *ngIf="actionError">{{ actionError }}</div>
+
+  <!-- Legs -->
+  <div class="legs-list">
+    <div class="leg-card" *ngFor="let ls of legStates; let i = index">
+
+      <!-- Leg Header -->
+      <div class="leg-header">
+        <div class="leg-badge" *ngIf="state.selectedLegs.length > 1">
+          {{ legLabel(i) }}
+        </div>
+        <div class="leg-route">
+          <span class="leg-city">{{ state.selectedLegs[i].from }}</span>
+          <span class="leg-arrow">→</span>
+          <span class="leg-city">{{ state.selectedLegs[i].to }}</span>
+        </div>
+        <div class="leg-meta">
+          <span class="leg-transport-icon">{{ ls.isTrain ? '🚆' : '🚌' }}</span>
+          <span class="leg-agency">{{ state.selectedLegs[i].agencyName }}</span>
+          <span class="leg-divider">·</span>
+          <span class="leg-class">{{ state.selectedLegs[i].className }}</span>
+          <span class="leg-divider">·</span>
+          <span class="leg-time">{{ state.selectedLegs[i].date }} {{ state.selectedLegs[i].time }}</span>
+        </div>
+      </div>
+
+      <!-- Train Leg Body -->
+      <div class="train-leg-body" *ngIf="ls.isTrain">
+
+        <!-- Passenger counter — shown only on the first train leg (count is shared) -->
+        <div class="train-counter-card" *ngIf="isFirstTrainLeg(i)">
+          <div class="counter-icon">🚆</div>
+          <div class="counter-body">
+            <span class="counter-label">{{ 'Passengers' | t }}</span>
+            <span class="counter-hint">{{ 'Train seats are assigned automatically by ENR' | t }}</span>
+          </div>
+          <div class="counter-control">
+            <button type="button" class="counter-btn" (click)="decrementPassengers()" [disabled]="passengerCount <= 1">−</button>
+            <span class="counter-value">{{ passengerCount }}</span>
+            <button type="button" class="counter-btn" (click)="incrementPassengers()" [disabled]="passengerCount >= 10">+</button>
+          </div>
+        </div>
+
+        <div class="auto-seat-info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ '{{count}} seats will be auto-assigned at checkout' | t: { count: passengerCount } }}</span>
+        </div>
+        <div class="leg-subtotal">
+          <span>{{ 'Subtotal' | t }}</span>
+          <span class="subtotal-price">{{ getLegPrice(ls) }} {{ 'EGP' | t }}</span>
+        </div>
+      </div>
+
+      <!-- Bus Leg Body: Seat Map -->
+      <div class="bus-leg-body" *ngIf="!ls.isTrain">
+
+        <div class="seat-loading" *ngIf="ls.loading">
+          <div class="spinner"></div>
+          <span>{{ 'Loading seats...' | t }}</span>
+        </div>
+
+        <div class="seat-error" *ngIf="!ls.loading && ls.error">
+          {{ ls.error }}
+        </div>
+
+        <ng-container *ngIf="!ls.loading && !ls.error && ls.selectedClass">
+          <!-- Bus icon -->
+          <div class="bus-header-row">
+            <span class="bus-front-icon">🚌</span>
+            <span class="front-label">{{ 'Front ⬆' | t }}</span>
+          </div>
+
+          <!-- Seat Grid -->
+          <div class="seats-grid">
+            <div *ngFor="let row of ls.seatRows; trackBy: trackByRow" class="seat-row">
+              <div class="seat-column">
+                <button
+                  *ngFor="let seat of row.left"
+                  type="button"
+                  class="seat"
+                  [class.available]="seat.status === 'Available'"
+                  [class.selected]="isSeatSelected(ls, seat.seatNumber)"
+                  [class.taken]="seat.status !== 'Available'"
+                  (click)="toggleSeat(ls, seat.seatNumber, seat.status)"
+                  [disabled]="seat.status !== 'Available'">
+                  {{ seat.seatNumber }}
+                </button>
+              </div>
+              <div class="aisle"></div>
+              <div class="seat-column">
+                <button
+                  *ngFor="let seat of row.right"
+                  type="button"
+                  class="seat"
+                  [class.available]="seat.status === 'Available'"
+                  [class.selected]="isSeatSelected(ls, seat.seatNumber)"
+                  [class.taken]="seat.status !== 'Available'"
+                  (click)="toggleSeat(ls, seat.seatNumber, seat.status)"
+                  [disabled]="seat.status !== 'Available'">
+                  {{ seat.seatNumber }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot available-dot"></span> {{ 'Available' | t }}</div>
+            <div class="legend-item"><span class="legend-dot selected-dot"></span> {{ 'Selected' | t }}</div>
+            <div class="legend-item"><span class="legend-dot taken-dot"></span> {{ 'Taken' | t }}</div>
+          </div>
+
+          <!-- Bus Leg Summary -->
+          <div class="bus-leg-summary">
+            <div class="selected-seats-info">
+              <span class="seats-label">{{ 'Selected seats:' | t }}</span>
+              <span class="seats-chips" *ngIf="ls.selectedSeats.length > 0">
+                <span class="chip" *ngFor="let s of ls.selectedSeats">{{ s }}</span>
+              </span>
+              <span class="no-seats-hint" *ngIf="ls.selectedSeats.length === 0">{{ 'None yet' | t }}</span>
+            </div>
+            <div class="leg-subtotal">
+              <span>{{ 'Subtotal' | t }}</span>
+              <span class="subtotal-price">{{ getLegPrice(ls) }} {{ 'EGP' | t }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sticky Bottom Bar -->
+  <div class="bottom-bar">
+    <div class="total-section">
+      <span class="total-label">{{ 'Total' | t }}</span>
+      <span class="total-price">{{ totalPrice }} {{ 'EGP' | t }}</span>
+    </div>
+
+    <div class="validation-msg" *ngIf="validationMessage">
+      ⚠️ {{ validationMessage }}
+    </div>
+
+    <button
+      class="continue-btn"
+      [disabled]="!canContinue || isNavigating"
+      (click)="continueToPassengers()">
+      {{ (isNavigating ? 'Loading...' : 'Continue to Passenger Details') | t }}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+
+</div>

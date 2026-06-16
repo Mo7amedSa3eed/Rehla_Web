@@ -1,154 +1,163 @@
 <div class="container booking-page">
   <div class="hero">
-    <h1>Book Your Next Journey</h1>
-    <p>Travel smarter with our all-in-one platform</p>
+    <h1>{{ 'Book Your Next Journey' | t }}</h1>
+    <p>{{ 'Travel smarter with our all-in-one platform' | t }}</p>
   </div>
 
   <div class="booking-card card">
-    <h3>Choose Transportation Mode</h3>
+    <h3>{{ 'Choose Transportation Mode' | t }}</h3>
 
     <div class="transport-grid">
       <div class="transport-card" [class.active]="transportMode === 'all'" (click)="selectTransport('all')">
         <div class="icon">🌍</div>
-        <span>All</span>
+        <span>{{ 'All' | t }}</span>
       </div>
       <div class="transport-card" [class.active]="transportMode === 'bus'" (click)="onBusCardClick()">
         <div class="icon bus">🚌</div>
-        <span>Bus</span>
+        <span>{{ 'Bus' | t }}</span>
       </div>
       <div class="transport-card" [class.active]="transportMode === 'train'" (click)="selectTransport('train')">
         <div class="icon train">🚆</div>
-        <span>Train</span>
+        <span>{{ 'Train' | t }}</span>
       </div>
     </div>
 
     <div class="agency-selector" *ngIf="transportMode === 'bus' && showAgencyOptions">
-      <h4>Choose Company</h4>
+      <h4>{{ 'Choose Company' | t }}</h4>
       <div class="agency-grid">
         <button type="button" class="agency-option" [class.active]="selectedAgency === 'Blue Bus'" (click)="selectAgency('Blue Bus')">Blue Bus</button>
         <button type="button" class="agency-option" [class.active]="selectedAgency === 'GoBus'" (click)="selectAgency('GoBus')">GoBus</button>
         <button type="button" class="agency-option" [class.active]="selectedAgency === 'Horus'" (click)="selectAgency('Horus')">Horus</button>
-        <button type="button" class="agency-option" [class.active]="selectedAgency === 'All companies'" (click)="selectAgency('All companies')">All companies</button>
+        <button type="button" class="agency-option" [class.active]="selectedAgency === 'All companies'" (click)="selectAgency('All companies')">{{ 'All companies' | t }}</button>
       </div>
     </div>
 
-    <h3>Trip Details</h3>
-    <p *ngIf="isLoadingStations" class="stations-loading">Loading stations...</p>
+    <h3>{{ 'Trip Details' | t }}</h3>
+    <p *ngIf="isLoadingStations" class="stations-loading">{{ 'Loading stations...' | t }}</p>
 
     <div class="trip-type">
-      <button [class.active]="tripType === 'oneway'" (click)="tripType='oneway'">One Way</button>
-      <button [class.active]="tripType === 'round'" (click)="tripType='round'">Round Trip</button>
-      <button [class.active]="tripType === 'multi-destination'" (click)="tripType='multi-destination'">Multi-Destination</button>
+      <button [class.active]="tripType === 'oneway'" (click)="tripType='oneway'">{{ 'One Way' | t }}</button>
+      <button [class.active]="tripType === 'round'" (click)="tripType='round'">{{ 'Round Trip' | t }}</button>
+      <button [class.active]="tripType === 'multi-destination'" (click)="tripType='multi-destination'">{{ 'Multi-Destination' | t }}</button>
     </div>
 
-    <div class="form-row passengers-row">
-      <div class="form-group" style="max-width: 200px;">
-        <label>Passengers</label>
-        <input type="number" min="1" step="1" inputmode="numeric" [(ngModel)]="passengers" placeholder="1" />
+    <div class="train-passenger-counter" *ngIf="transportMode === 'train'">
+      <label>{{ 'Passengers' | t }}</label>
+      <div class="counter-control">
+        <button type="button" (click)="decrementPassengers()" [disabled]="passengers <= 1">−</button>
+        <span>{{ passengers }}</span>
+        <button type="button" (click)="incrementPassengers()" [disabled]="passengers >= 10">+</button>
       </div>
     </div>
 
     <ng-container *ngIf="tripType !== 'multi-destination'">
       <div class="form-row">
         <div class="form-group">
-          <label>From Governorate</label>
+          <label>{{ 'From Governorate' | t }}</label>
           <select [(ngModel)]="fromGovernorate" (ngModelChange)="onFromGovernorateChange()">
-            <option value="" disabled selected>Select governorate</option>
-            <option *ngFor="let group of stationGroups" [value]="group.governorate">{{group.governorate}}</option>
+            <option value="" disabled selected>{{ 'Select governorate' | t }}</option>
+            <option *ngFor="let group of stationGroups" [value]="group.governorate">{{ governorateLabel(group) }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>To Governorate</label>
+          <label>{{ 'To Governorate' | t }}</label>
           <select [(ngModel)]="toGovernorate" (ngModelChange)="onToGovernorateChange()">
-            <option value="" disabled selected>Select governorate</option>
-            <option *ngFor="let group of stationGroups" [value]="group.governorate">{{group.governorate}}</option>
+            <option value="" disabled selected>{{ 'Select governorate' | t }}</option>
+            <option *ngFor="let group of stationGroups" [value]="group.governorate">{{ governorateLabel(group) }}</option>
           </select>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>From Station (Optional)</label>
+          <label>{{ 'From Station (Optional)' | t }}</label>
           <select [(ngModel)]="fromStationId" [disabled]="!fromGovernorate">
-            <option [ngValue]="null">All stations in governorate</option>
-            <option *ngFor="let station of fromStations" [ngValue]="station.id">{{station.englishName}} ({{station.city}})</option>
+            <option [ngValue]="null">{{ 'All stations in governorate' | t }}</option>
+            <option *ngFor="let station of fromStations" [ngValue]="station.id">{{ stationLabel(station) }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>To Station (Optional)</label>
+          <label>{{ 'To Station (Optional)' | t }}</label>
           <select [(ngModel)]="toStationId" [disabled]="!toGovernorate">
-            <option [ngValue]="null">All stations in governorate</option>
-            <option *ngFor="let station of toStations" [ngValue]="station.id">{{station.englishName}} ({{station.city}})</option>
+            <option [ngValue]="null">{{ 'All stations in governorate' | t }}</option>
+            <option *ngFor="let station of toStations" [ngValue]="station.id">{{ stationLabel(station) }}</option>
           </select>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Departure Date</label>
-          <input type="date" [(ngModel)]="date">
+          <label>{{ 'Departure Date' | t }}</label>
+          <input type="date" [(ngModel)]="date" [min]="todayStr" [max]="maxDateStr">
         </div>
         <div class="form-group" *ngIf="tripType === 'round'">
-          <label>Return Date</label>
-          <input type="date" [(ngModel)]="returnDate">
+          <label>{{ 'Return Date' | t }}</label>
+          <input type="date" [(ngModel)]="returnDate" [min]="date || todayStr" [max]="maxDateStr">
         </div>
       </div>
     </ng-container>
 
     <ng-container *ngIf="tripType === 'multi-destination'">
       <div class="multi-leg-container" *ngFor="let leg of multiLegs; let i = index">
-        <h4>Leg {{i + 1}}</h4>
+        <h4>{{ 'Leg' | t }} {{i + 1}}</h4>
         <div class="form-row">
           <div class="form-group">
-            <label>From Gov.</label>
+            <label>{{ 'From Gov' | t }}</label>
             <select [(ngModel)]="leg.fromGovernorate" (ngModelChange)="onMultiFromGovChange(leg)" [disabled]="!!leg.fromLocked">
-              <option value="" disabled selected>Select</option>
-              <option *ngFor="let group of stationGroups" [value]="group.governorate">{{group.governorate}}</option>
+              <option value="" disabled selected>{{ 'Select' | t }}</option>
+              <option *ngFor="let group of stationGroups" [value]="group.governorate">{{ governorateLabel(group) }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>To Gov.</label>
+            <label>{{ 'To Gov' | t }}</label>
             <select [(ngModel)]="leg.toGovernorate" (ngModelChange)="onMultiToGovChange(leg)" [disabled]="!!leg.toLocked">
-              <option value="" disabled selected>Select</option>
-              <option *ngFor="let group of stationGroups" [value]="group.governorate">{{group.governorate}}</option>
+              <option value="" disabled selected>{{ 'Select' | t }}</option>
+              <option *ngFor="let group of stationGroups" [value]="group.governorate">{{ governorateLabel(group) }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Date</label>
-            <input type="date" [(ngModel)]="leg.travelDate">
+            <label>{{ 'Date' | t }}</label>
+            <input type="date" [(ngModel)]="leg.travelDate" (ngModelChange)="onMultiDateChange(i)" [min]="i === 0 ? todayStr : (multiLegs[i-1].travelDate || todayStr)" [max]="maxDateStr">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>From Station</label>
-            <select [(ngModel)]="leg.fromStationId" [disabled]="!leg.fromGovernorate || !!leg.fromLocked">
-              <option [ngValue]="null">All stations</option>
-              <option *ngFor="let station of leg.fromStations" [ngValue]="station.id">{{station.englishName}}</option>
+            <label>{{ 'From Station' | t }}</label>
+            <select [(ngModel)]="leg.fromStationId" (ngModelChange)="onMultiStationChange()" [disabled]="!leg.fromGovernorate || !!leg.fromLocked">
+              <option [ngValue]="null">{{ 'All stations' | t }}</option>
+              <option *ngFor="let station of leg.fromStations" [ngValue]="station.id">{{ stationLabel(station) }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>To Station</label>
-            <select [(ngModel)]="leg.toStationId" [disabled]="!leg.toGovernorate || !!leg.toLocked">
-              <option [ngValue]="null">All stations</option>
-              <option *ngFor="let station of leg.toStations" [ngValue]="station.id">{{station.englishName}}</option>
+            <label>{{ 'To Station' | t }}</label>
+            <select [(ngModel)]="leg.toStationId" (ngModelChange)="onMultiStationChange()" [disabled]="!leg.toGovernorate || !!leg.toLocked">
+              <option [ngValue]="null">{{ 'All stations' | t }}</option>
+              <option *ngFor="let station of leg.toStations" [ngValue]="station.id">{{ stationLabel(station) }}</option>
             </select>
           </div>
-          <div class="form-group align-bottom" *ngIf="i > 0 && !leg.fromLocked && !leg.toLocked">
-             <button class="btn btn-outline" (click)="removeLeg(i)">Remove Leg</button>
+          <div class="form-group align-bottom" *ngIf="i > 0 && !returnAutomationMode && i === multiLegs.length - 1">
+             <button class="btn btn-outline" (click)="removeLeg(i)">{{ 'Remove Leg' | t }}</button>
           </div>
         </div>
         <hr/>
       </div>
 
-      <div class="multi-leg-actions" style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button class="btn btn-outline" (click)="addLeg()">+ Add Leg</button>
-        <button class="btn btn-outline" (click)="autoReturnDirect()" *ngIf="multiLegs.length >= 1">Direct Return</button>
-        <button class="btn btn-outline" (click)="autoReturnStepByStep()" *ngIf="multiLegs.length >= 2">Step-by-Step Return</button>
+      <div class="multi-leg-actions">
+        <ng-container *ngIf="!returnAutomationMode; else undoReturnTpl">
+          <button class="btn btn-outline" (click)="addLeg()" [disabled]="!canAddMultiLeg">+ {{ 'Add another destination' | t }}</button>
+          <button class="btn btn-outline" (click)="autoReturnDirect()" *ngIf="canShowReturnAutomation">{{ 'Direct Return' | t }}</button>
+          <button class="btn btn-outline" (click)="autoReturnStepByStep()" *ngIf="canShowReturnAutomation && multiLegs.length >= 2">{{ 'Step-by-Step Reverse' | t }}</button>
+        </ng-container>
+        <ng-template #undoReturnTpl>
+          <button class="btn btn-outline" (click)="undoReturnAutomation()">{{ 'Undo Return' | t }}</button>
+        </ng-template>
       </div>
     </ng-container>
 
+    <div class="page-error" *ngIf="actionError" style="margin-bottom: 20px;">{{ actionError | t }}</div>
+
     <button class="search-btn btn btn-primary" (click)="searchTrips()" [disabled]="isSearching">
-      {{isSearching ? 'Searching...' : '🔍 Search Available Trips'}}
+      {{ isSearching ? ('Searching...' | t) : ('🔍 ' + ('Search Available Trips' | t)) }}
     </button>
   </div>
 </div>

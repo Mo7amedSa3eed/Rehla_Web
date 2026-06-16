@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 class MockApiService {
   static tickets: any[] = [];
 
-  checkoutWallet() { return of('ok'); }
+  checkout() { return of('ok'); }
   getMarketplaceListings() { return of({ items: [] }); }
   listTicketOnMarketplace(payload: { bookingId: number }) {
     MockApiService.tickets = MockApiService.tickets.map((ticket) =>
@@ -44,7 +44,7 @@ describe('State', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should mark a pending local booking confirmed after checkout', async () => {
+  it('should clear payment state after wallet checkout', async () => {
     const localBooking: UiBooking = {
       id: 9999,
       ticketId: 9999,
@@ -57,7 +57,7 @@ describe('State', () => {
 
     await service.checkoutWallet();
 
-    expect(service.bookings.find(b => b.id === 9999)?.status).toBe('confirmed');
+    expect(service.currentPaymentBooking).toBeNull();
   });
 
   it('should mark ticket pending-sale after listing to marketplace', async () => {
@@ -122,6 +122,7 @@ describe('State', () => {
       expect(service.isTrainTrip('', 'TRAIN')).toBe(true);
       expect(service.isTrainTrip('ENR', '')).toBe(true);
       expect(service.isTrainTrip('National Rail', '')).toBe(true);
+      expect(service.isTrainTrip('السكة الحديد', '')).toBe(true);
     });
 
     it('should return true for train numeric transport types', () => {
@@ -138,6 +139,11 @@ describe('State', () => {
     it('should return false for bus numeric transport types', () => {
       expect(service.isTrainTrip('', 1)).toBe(false);
       expect(service.isTrainTrip('', '1')).toBe(false);
+    });
+
+    it('should prefer recognizable agency names over stale numeric search filters', () => {
+      expect(service.isTrainTrip('Egyptian National Railways', 1)).toBe(true);
+      expect(service.isTrainTrip('Go Bus', 2)).toBe(false);
     });
   });
 

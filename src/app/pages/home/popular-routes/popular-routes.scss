@@ -1,0 +1,130 @@
+.popular-routes-section {
+  padding: 60px 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 40px;
+
+  h2 {
+    color: #FFFFFF;
+    font-size: 32px;
+    margin: 0 0 10px 0;
+  }
+
+  p {
+    color: #8BA0B8;
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+.routes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.route-card {
+  position: relative;
+  background: #112240;
+  border: 1px solid #1E3A52;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: #00E5FF;
+    box-shadow: 0 12px 24px rgba(0, 229, 255, 0.1);
+
+    .route-bg {
+      opacity: 0.15;
+    }
+
+    .view-btn {
+      color: #00E5FF;
+      transform: translateX(4px);
+    }
+  }
+}
+
+.route-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.4), rgba(0, 122, 255, 0.4));
+  opacity: 0.05;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.route-content {
+  position: relative;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+  z-index: 1;
+}
+
+.route-cities {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  .city {
+    color: #FFFFFF;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .arrow {
+    color: #00E5FF;
+    font-size: 20px;
+  }
+}
+
+.route-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-btn {
+  color: #8BA0B8;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+
+  &::after {
+    content: '→';
+    margin-left: 6px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .routes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header h2 {
+    font-size: 28px;
+  }
+}

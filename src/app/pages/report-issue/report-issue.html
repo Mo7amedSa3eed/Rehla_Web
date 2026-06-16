@@ -1,7 +1,7 @@
 <div class="report-page">
   <div class="page-header">
-    <button class="back-btn" routerLink="/profile">←</button>
-    <h1>Report an Issue</h1>
+    <button class="back-btn" routerLink="/profile" [attr.aria-label]="'Back' | t">←</button>
+    <h1>{{ 'Report an Issue' | t }}</h1>
   </div>
 
   <div class="report-card card">
@@ -9,15 +9,15 @@
 
       <!-- Category -->
       <div class="form-group">
-        <label for="issueCategory">Issue Category</label>
+        <label for="issueCategory">{{ 'Issue Category' | t }}</label>
         <select id="issueCategory" name="issueCategory" [(ngModel)]="issueCategory">
-          <option *ngFor="let cat of categories" [ngValue]="cat.value">{{ cat.label }}</option>
+          <option *ngFor="let cat of categories" [ngValue]="cat.value">{{ cat.label | t }}</option>
         </select>
       </div>
 
       <!-- Title -->
       <div class="form-group">
-        <label for="issueTitle">Title *</label>
+        <label for="issueTitle">{{ 'Title' | t }} *</label>
         <input
           id="issueTitle"
           name="title"
@@ -25,13 +25,13 @@
           maxlength="200"
           required
           [(ngModel)]="title"
-          placeholder="Brief summary of the issue" />
-        <span class="error" *ngIf="titleInvalid">Title must not exceed 200 characters.</span>
+          [placeholder]="'Brief summary of the issue' | t" />
+        <span class="error" *ngIf="titleInvalid">{{ 'Title must not exceed 200 characters.' | t }}</span>
       </div>
 
       <!-- Description -->
       <div class="form-group">
-        <label for="issueDesc">Description * <span class="char-count">({{ descriptionCharCount }}/1000)</span></label>
+        <label for="issueDesc">{{ 'Description' | t }} * <span class="char-count">({{ descriptionCharCount }}/1000)</span></label>
         <textarea
           id="issueDesc"
           name="description"
@@ -39,17 +39,17 @@
           maxlength="1000"
           required
           [(ngModel)]="description"
-          placeholder="Please describe the issue in detail (minimum 10 characters)..."></textarea>
+          [placeholder]="'Please describe the issue in detail (minimum 10 characters)...' | t"></textarea>
         <span class="error" *ngIf="descriptionInvalid">
-          {{ description.trim().length < 10 ? 'Description must be at least 10 characters.' : 'Description cannot exceed 1000 characters.' }}
+          {{ (description.trim().length < 10 ? 'Description must be at least 10 characters.' : 'Description cannot exceed 1000 characters.') | t }}
         </span>
       </div>
 
       <button class="btn btn-primary submit-btn" type="submit" [disabled]="!isFormValid || isSubmitting">
-        {{ isSubmitting ? 'Submitting...' : '🚨 Submit Report' }}
+        {{ (isSubmitting ? 'Submitting...' : 'Submit Report') | t }}
       </button>
 
-      <p class="submit-error" *ngIf="submitError">❌ {{ submitError }}</p>
+      <p class="submit-error" *ngIf="submitError">❌ {{ submitError | t }}</p>
     </form>
   </div>
 
@@ -57,13 +57,13 @@
   <div class="modal-overlay" *ngIf="showSuccessModal">
     <div class="modal-card card">
       <div class="success-icon">✅</div>
-      <h2>Report Submitted!</h2>
+      <h2>{{ 'Report Submitted!' | t }}</h2>
       <p *ngIf="createdTicket">
-        Ticket <strong>#{{ createdTicket.ticketId }}</strong> has been created.<br/>
-        Status: <strong>{{ createdTicket.status }}</strong>
+        {{ 'Ticket' | t }} <strong>#{{ createdTicket.ticketId }}</strong> {{ 'has been created.' | t }}<br/>
+        {{ 'Status' | t }}: <strong>{{ createdTicket.status | t }}</strong>
       </p>
-      <p>Our team will review your issue and get back to you.</p>
-      <button class="btn btn-primary" (click)="closeSuccessModal()">Back to Profile</button>
+      <p>{{ 'Our team will review your issue and get back to you.' | t }}</p>
+      <button class="btn btn-primary" (click)="closeSuccessModal()">{{ 'Back to Profile' | t }}</button>
     </div>
   </div>
 </div>

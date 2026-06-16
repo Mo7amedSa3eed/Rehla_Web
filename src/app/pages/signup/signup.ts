@@ -5,6 +5,10 @@ import { Router, RouterModule } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService, CountryDto, RegisterRequest } from '../../services/api';
+import { AuthSessionService } from '../../services/auth-session.service';
+import { AppStateService } from '../../services/state';
+import { LanguageService } from '../../core/i18n/language.service';
+import { LanguageSwitchComponent } from '../../shared/components/language-switch/language-switch';
 import {
   buildE164Number,
   DEFAULT_PHONE_CODE,
@@ -19,7 +23,7 @@ import {
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, LanguageSwitchComponent],
   templateUrl: './signup.html',
   styleUrls: ['./signup.scss']
 })
@@ -47,6 +51,9 @@ export class SignupComponent implements OnInit {
 
   constructor(
     private readonly api: ApiService,
+    private readonly session: AuthSessionService,
+    private readonly state: AppStateService,
+    private readonly language: LanguageService,
     private readonly router: Router,
   ) {}
 
@@ -123,7 +130,11 @@ export class SignupComponent implements OnInit {
       };
 
       const tokens = await firstValueFrom(this.api.register(trimmed));
-      this.storeTokens(tokens.accessToken, tokens.refreshToken);
+      this.session.setTokens(tokens.accessToken, tokens.refreshToken);
+      void this.language.syncCurrentLanguage();
+      this.state.applyAuthUserProfile(tokens.user);
+      void this.state.ensureProfileLoaded().catch(() => undefined);
+      void this.state.ensureActiveCartLoaded().catch(() => undefined);
       await this.router.navigate(['/home']);
     } catch (error) {
       this.errorMessage = this.getErrorMessage(error);
@@ -150,12 +161,4 @@ export class SignupComponent implements OnInit {
     return 'Registration failed.';
   }
 
-  private storeTokens(accessToken: string, refreshToken: string): void {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-  }
 }

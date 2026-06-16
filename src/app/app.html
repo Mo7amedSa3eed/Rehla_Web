@@ -3,15 +3,96 @@
 
     <div class="logo">
       <div class="logo-icon">🚉</div>
-      <span>Rihla</span>
+      <span>{{ 'Rihla' | t }}</span>
     </div>
 
     <div class="nav-links">
-      <a routerLink="/home">Home</a>
-      <a routerLink="/about">About</a>
+      <a routerLink="/home">{{ 'Home' | t }}</a>
+      <a routerLink="/about">{{ 'About' | t }}</a>
     </div>
 
-    <div class="profile-icon">
+    <div class="nav-actions">
+      <div class="notifications-menu">
+        <button
+          class="notification-btn"
+          type="button"
+          [attr.aria-label]="'Notifications' | t"
+          [class.active]="isNotificationsOpen"
+          (click)="toggleNotifications()">
+          <lucide-icon [img]="BellIcon" [size]="20" [strokeWidth]="2.4"></lucide-icon>
+          <span class="notification-count" *ngIf="notifications.unreadCount">{{ notifications.unreadCount }}</span>
+        </button>
+
+        <section class="notifications-panel" *ngIf="isNotificationsOpen">
+          <div class="notifications-header">
+            <div>
+              <h2>{{ 'Notifications' | t }}</h2>
+              <p>{{ notifications.unreadCount }} {{ 'unread' | t }}</p>
+            </div>
+            <div class="notification-tools">
+              <button type="button" [title]="'Refresh' | t" (click)="notifications.loadNotifications()">
+                <lucide-icon [img]="RefreshIcon" [size]="17" [strokeWidth]="2.3"></lucide-icon>
+              </button>
+              <button type="button" [title]="'Mark all as read' | t" (click)="notifications.markAllRead()">
+                <lucide-icon [img]="CheckAllIcon" [size]="17" [strokeWidth]="2.3"></lucide-icon>
+              </button>
+              <button type="button" [title]="'Close' | t" (click)="closeNotifications()">
+                <lucide-icon [img]="CloseIcon" [size]="17" [strokeWidth]="2.3"></lucide-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="notification-filters">
+            <button
+              *ngFor="let filter of notifications.filters"
+              type="button"
+              [class.active]="notifications.activeFilter === filter.value"
+              (click)="notifications.setFilter(filter.value)">
+              <span>{{ filter.label | t }}</span>
+              <span class="filter-count" *ngIf="filter.value === 'unread' && notifications.unreadCount">
+                {{ notifications.unreadCount }}
+              </span>
+            </button>
+          </div>
+
+          <p class="notifications-error" *ngIf="notifications.error">{{ notifications.error }}</p>
+          <div class="notifications-loading" *ngIf="notifications.isLoading">{{ 'Loading notifications...' | t }}</div>
+          <div
+            class="notifications-empty"
+            *ngIf="!notifications.isLoading && notifications.groupedNotifications.length === 0">
+            {{ 'No notifications found.' | t }}
+          </div>
+
+          <div class="notification-groups" *ngIf="notifications.groupedNotifications.length">
+            <section class="notification-group" *ngFor="let group of notifications.groupedNotifications">
+              <h3>{{ group.label }}</h3>
+              <article
+                class="notification-item"
+                *ngFor="let notification of group.items"
+                [ngClass]="[notification.type, notification.isRead ? 'read' : 'unread']"
+                (click)="notifications.markRead(notification)">
+                <div class="notification-copy">
+                  <div class="notification-title-row">
+                    <strong>{{ notifications.titleOf(notification) }}</strong>
+                    <span class="notification-category">{{ notifications.typeLabel(notification) }}</span>
+                  </div>
+                  <p>{{ notifications.bodyOf(notification) }}</p>
+                  <time>{{ notification.receivedAt | date:'shortTime' }}</time>
+                </div>
+                <button
+                  class="notification-delete"
+                  type="button"
+                  [title]="'Delete notification' | t"
+                  (click)="notifications.deleteNotification(notification, $event)">
+                  <lucide-icon [img]="TrashIcon" [size]="16" [strokeWidth]="2.2"></lucide-icon>
+                </button>
+              </article>
+            </section>
+          </div>
+        </section>
+      </div>
+
+      <div class="profile-icon">
       <div class="avatar" routerLink="/profile" style="cursor:pointer">
 
       <img *ngIf="state.userProfile.photo; else defaultIcon"
@@ -24,6 +105,7 @@
 
       </div>
     </div>
+    </div>
 
   </div>
 </nav>
@@ -32,45 +114,27 @@
 <div class="container" *ngIf="showShellChrome">
   <div class="sub-nav">
     <button class="btn" routerLink="/booking" routerLinkActive="active-nav">
-      🎫 Book Trip
+      🎫 {{ 'Book Trip' | t }}
     </button>
     <button class="btn" routerLink="/trips" routerLinkActive="active-nav">
-      🚌 Available Trips
+      🚌 {{ 'Available Trips' | t }}
+    </button>
+    <button class="btn cart-nav-btn" routerLink="/cart" routerLinkActive="active-nav">
+      <lucide-icon [img]="ShoppingCartIcon" [size]="18" [strokeWidth]="2.4"></lucide-icon>
+      <span>{{ 'Cart' | t }}</span>
+      <span class="cart-count" *ngIf="state.activeCart?.items?.length">{{ state.activeCart?.items?.length }}</span>
     </button>
     <button class="btn" routerLink="/my-tickets" routerLinkActive="active-nav">
-      🎟 My Tickets
+      🎟 {{ 'My Tickets' | t }}
     </button>
     <button class="btn" routerLink="/challenges" routerLinkActive="active-nav">
-      ⭐ Rewards
+      ⭐ {{ 'Rewards' | t }}
     </button>
   </div>
 </div>
 
-<!-- 
-  <div class="sub-nav">
-    <button
-      [class.active]="view === '/booking'"
-      routerLink="/booking">
-      🎫 Book Trip
-    </button>
-
-    <button
-      [class.active]="view === '/trips'"
-      routerLink="/trips">
-      🚌 Available Trips
-    </button>
-
-        <button
-      [class.active]="view === '/my-bookings'"
-      routerLink="/my-bookings">
-      📋 My Bookings
-    </button>
-
-    <button
-      [class.active]="view === '/my-tickets'"
-      routerLink="/my-tickets">
-      🎟 My Tickets
-    </button>
-  </div>
-</div> -->
 <router-outlet></router-outlet>
+
+<div class="language-loading-overlay" *ngIf="language.isLoading$ | async">
+  <div class="language-spinner"></div>
+</div>

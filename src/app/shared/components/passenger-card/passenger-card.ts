@@ -1,6 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { LanguageService } from '../../../core/i18n/language.service';
 import {
   FALLBACK_PHONE_CODES,
   getLocalNumberConstraints,
@@ -11,7 +13,7 @@ import {
 @Component({
   selector: 'app-passenger-card',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   templateUrl: './passenger-card.html',
   styleUrls: ['./passenger-card.scss']
 })
@@ -24,6 +26,8 @@ export class PassengerCardComponent implements OnInit {
   @Input() showHeaderIcon: boolean = false;
   @Input() seatLabel: string = '';
   @Input() phoneCodes: PhoneCodeOption[] = FALLBACK_PHONE_CODES;
+
+  constructor(public language: LanguageService) {}
 
   ngOnInit() {
     if (!this.group) {
@@ -40,11 +44,15 @@ export class PassengerCardComponent implements OnInit {
   }
 
   getIdNumberLabel(): string {
-    return this.idType === 'Passport' ? 'Passport Number' : 'National ID Number';
+    return this.idType === 'Passport' 
+      ? this.language.instant('Passport Number') 
+      : this.language.instant('National ID Number');
   }
 
   getIdNumberPlaceholder(): string {
-    return this.idType === 'Passport' ? 'A1234567' : 'National ID Number';
+    return this.idType === 'Passport' 
+      ? 'A1234567' 
+      : this.language.instant('National ID Number');
   }
 
   getIdNumberInputMode(): string {

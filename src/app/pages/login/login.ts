@@ -6,11 +6,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, LoginRequest } from '../../services/api';
 import { AppStateService } from '../../services/state';
+import { AuthSessionService } from '../../services/auth-session.service';
+import { LanguageService } from '../../core/i18n/language.service';
+import { LanguageSwitchComponent } from '../../shared/components/language-switch/language-switch';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, LanguageSwitchComponent, TranslatePipe],
   templateUrl: './login.html',
   styleUrls: ['./login.scss']
 })
@@ -27,6 +31,8 @@ export class LoginComponent {
   constructor(
     private readonly api: ApiService,
     private readonly state: AppStateService,
+    private readonly session: AuthSessionService,
+    private readonly language: LanguageService,
     private readonly router: Router,
   ) {}
 
@@ -34,7 +40,7 @@ export class LoginComponent {
     this.errorMessage = '';
 
     if (form.invalid) {
-      this.errorMessage = 'Please enter your email and password.';
+      this.errorMessage = this.language.instant('Please enter your email and password.');
       return;
     }
 
@@ -48,23 +54,17 @@ export class LoginComponent {
       };
 
       const tokens = await firstValueFrom(this.api.login(payload));
-      this.storeTokens(tokens.accessToken, tokens.refreshToken);
+      this.session.setTokens(tokens.accessToken, tokens.refreshToken);
+      void this.language.syncCurrentLanguage();
       this.state.applyAuthUserProfile(tokens.user);
+      void this.state.ensureProfileLoaded().catch(() => undefined);
+      void this.state.ensureActiveCartLoaded().catch(() => undefined);
       await this.router.navigate(['/home']);
     } catch (error) {
       this.errorMessage = this.getErrorMessage(error);
     } finally {
       this.isSubmitting = false;
     }
-  }
-
-  private storeTokens(accessToken: string, refreshToken: string): void {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
   }
 
   private getErrorMessage(error: unknown): string {
@@ -82,6 +82,6 @@ export class LoginComponent {
       }
     }
 
-    return 'Login failed.';
+    return this.language.instant('Login failed.');
   }
 }

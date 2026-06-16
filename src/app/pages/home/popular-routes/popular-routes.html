@@ -1,0 +1,32 @@
+<div class="popular-routes-section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{{ 'Popular Routes' | t }}</h2>
+      <p>{{ 'Discover our most frequently booked journeys this week' | t }}</p>
+    </div>
+
+    <div class="routes-loading" *ngIf="isLoading" style="text-align: center; color: #8BA0B8; padding: 20px;">
+      {{ 'Loading popular routes...' | t }}
+    </div>
+
+    <div class="routes-empty" *ngIf="!isLoading && routes.length === 0" style="text-align: center; color: #8BA0B8; padding: 20px;">
+      {{ 'Check back later for trending destinations!' | t }}
+    </div>
+
+    <div class="routes-grid" *ngIf="!isLoading && routes.length > 0">
+      <div class="route-card" *ngFor="let route of routes" (click)="onRouteClick(route)">
+        <div class="route-bg"></div>
+        <div class="route-content">
+          <div class="route-cities">
+            <span class="city">{{ language.currentLanguage === 'ar' && route.originGovAr ? route.originGovAr : route.originGovEn }}</span>
+            <span class="arrow">→</span>
+            <span class="city">{{ language.currentLanguage === 'ar' && route.destinationGovAr ? route.destinationGovAr : route.destinationGovEn }}</span>
+          </div>
+          <div class="route-footer">
+            <span class="view-btn">{{ 'View Trips' | t }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

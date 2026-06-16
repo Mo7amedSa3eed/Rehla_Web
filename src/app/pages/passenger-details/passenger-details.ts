@@ -1,30 +1,33 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AppStateService, PassengerDraft } from '../../services/state';
+import { AppStateService, DirectBookingError, PassengerDraft } from '../../services/state';
 import { ApiService } from '../../services/api';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import {
   DEFAULT_PHONE_CODE,
   FALLBACK_PHONE_CODES,
   mapCountriesToPhoneCodes,
   PhoneCodeOption,
+  splitPhoneNumber,
 } from '../../shared/phone-codes';
 import { PassengerCardComponent } from '../../shared/components/passenger-card/passenger-card';
 import { PassengerAutofillBannerComponent } from '../../shared/components/passenger-autofill-banner/passenger-autofill-banner';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LanguageService } from '../../core/i18n/language.service';
 
 @Component({
   selector: 'app-passenger-details',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PassengerCardComponent, PassengerAutofillBannerComponent],
+  imports: [CommonModule, ReactiveFormsModule, PassengerCardComponent, PassengerAutofillBannerComponent, TranslatePipe],
   templateUrl: './passenger-details.html',
   styleUrls: ['./passenger-details.scss']
 })
-export class PassengerDetailsComponent implements OnInit {
+export class PassengerDetailsComponent implements OnInit, OnDestroy {
   isProcessing = false;
+  actionError = '';
   selectedLegs: any[] = [];
-  isTrain = false;
 
   form!: FormGroup;
   phoneCodes: PhoneCodeOption[] = FALLBACK_PHONE_CODES;
@@ -32,14 +35,16 @@ export class PassengerDetailsComponent implements OnInit {
   pointsToRedeem = 0;
   readonly pointsPerEgp = 20;
 
-  isAutofilled = false;
-  autofillError = '';
+  // Per-leg autofill state
+  autofillStates: { isAutofilled: boolean; autofillError: string }[] = [];
+  private autofillSubs: Subscription[] = [];
 
   constructor(
     public state: AppStateService,
     private router: Router,
     private api: ApiService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    public language: LanguageService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -49,76 +54,201 @@ export class PassengerDetailsComponent implements OnInit {
       return;
     }
 
-    this.isTrain = this.selectedLegs.some(leg => this.state.isTrainTrip(leg.agencyName || '', leg.transport || ''));
-    
-    this.form = this.fb.group({
-      passengers: this.fb.array([])
-    });
+    this.form = this.fb.group({ legs: this.fb.array([]) });
 
-    await this.loadPhoneCodes();
-    this.initializePassengers();
+    await Promise.all([
+      this.loadPhoneCodes(),
+      this.state.loadProfile().catch(() => undefined),
+    ]);
+
+    this.initializeLegs();
   }
 
-  get passengersArray(): FormArray {
-    return this.form.get('passengers') as FormArray;
+  ngOnDestroy(): void {
+    this.autofillSubs.forEach(s => s.unsubscribe());
   }
 
-  private initializePassengers(): void {
-    const count = this.passengerCount;
+  // ── Form structure ────────────────────────────────────────
 
-    // Load from existing pending passengers if matching count
-    if (this.state.pendingPassengers.length === count) {
-      this.state.pendingPassengers.forEach((p) => {
-        this.passengersArray.push(this.createPassengerGroup(p));
-      });
-      return;
-    }
+  get legsArray(): FormArray {
+    return this.form.get('legs') as FormArray;
+  }
 
-    // Otherwise create fresh passenger inputs
-    for (let i = 0; i < count; i++) {
-      const pGroup = this.createPassengerGroup();
-      
-      // Profile prefill for the FIRST passenger
-      if (i === 0 && this.state.userProfile) {
-        pGroup.patchValue({
-          passengerName: `${this.state.userProfile.firstName || ''} ${this.state.userProfile.lastName || ''}`.trim(),
-          email: this.state.userProfile.email || '',
-        });
+  getPassengersArray(legIdx: number): FormArray {
+    return (this.legsArray.at(legIdx) as FormGroup).get('passengers') as FormArray;
+  }
 
-        // If user profile has phone, basic prefill
-        if (this.state.userProfile.phone) {
-          let phone = this.state.userProfile.phone;
-          if (phone.startsWith('+20')) {
-            phone = phone.substring(3);
-          } else if (phone.startsWith('20') && phone.length >= 11) {
-            phone = phone.substring(2);
-          } else if (phone.startsWith('+')) {
-            phone = phone.substring(1);
-          }
-          
-          // Ensure Egyptian mobile numbers start with 0
-          if (phone.length === 10 && !phone.startsWith('0')) {
-            phone = '0' + phone;
-          }
-          
-          pGroup.patchValue({ phoneLocalNumber: phone });
-        }
+  private initializeLegs(): void {
+    this.autofillSubs.forEach(s => s.unsubscribe());
+    this.autofillSubs = [];
+    this.autofillStates = [];
+    (this.legsArray as FormArray).clear();
+
+    const profileDraft = this.profilePassengerDraft();
+
+    this.selectedLegs.forEach((leg, legIdx) => {
+      const isTrain = this.isLegTrain(legIdx);
+      const count = this.passengerCountForLeg(legIdx);
+      const passengersArray = this.fb.array([] as FormGroup[]);
+
+      for (let i = 0; i < count; i++) {
+        // Profile prefill for passenger 0 of EVERY leg (spec §7)
+        // Other passengers get blank forms
+        const draft = i === 0 ? profileDraft : undefined;
+        passengersArray.push(this.createPassengerGroup(draft, isTrain));
       }
 
-      this.passengersArray.push(pGroup);
-    }
+      this.legsArray.push(this.fb.group({ passengers: passengersArray }));
+      this.autofillStates.push({ isAutofilled: false, autofillError: '' });
+      this.watchFirstPassengerForAutofillReset(legIdx);
+    });
   }
 
-  private createPassengerGroup(draft?: PassengerDraft): FormGroup {
+  private createPassengerGroup(draft?: PassengerDraft, isTrain = false): FormGroup {
     return this.fb.group({
       passengerName: [draft?.fullName || '', Validators.required],
       phoneCode: [draft?.phoneCode || DEFAULT_PHONE_CODE],
       phoneLocalNumber: [draft?.phoneLocalNumber || '', Validators.required],
       email: [draft?.email || '', Validators.email],
-      idType: [this.isTrain ? (draft?.idType || 'NationalId') : 'NationalId', this.isTrain ? Validators.required : []],
-      idNumber: [this.isTrain ? (draft?.nationalId || '') : '', this.isTrain ? Validators.required : []]
+      idType: [isTrain ? (draft?.idType || 'NationalId') : 'NationalId', isTrain ? Validators.required : []],
+      idNumber: [isTrain ? (draft?.nationalId || '') : '', isTrain ? Validators.required : []]
     });
   }
+
+  // ── Per-leg helpers ───────────────────────────────────────
+
+  isLegTrain(legIdx: number): boolean {
+    const leg = this.selectedLegs[legIdx];
+    return this.state.isTrainTrip(leg?.rawAgencyName ?? leg?.agencyName ?? '', leg?.transport ?? '');
+  }
+
+  passengerCountForLeg(legIdx: number): number {
+    const leg = this.selectedLegs[legIdx];
+    if (this.isLegTrain(legIdx)) {
+      // Train: use the shared counter the user set on leg-review
+      return this.state.searchPassengers || 1;
+    }
+    // Bus: one form per selected seat, no cross-leg enforcement
+    return leg?.selectedSeats?.length ?? 0;
+  }
+
+  legLabel(legIdx: number): string {
+    if (this.state.searchType === 'multi-destination') {
+      return this.language.instant('Leg {{index}}', { index: legIdx + 1 });
+    }
+    const labels = [
+      this.language.instant('Outbound'),
+      this.language.instant('Return'),
+      this.language.instant('Leg 3'),
+      this.language.instant('Leg 4'),
+      this.language.instant('Leg 5')
+    ];
+    return labels[legIdx] ?? this.language.instant('Leg {{index}}', { index: legIdx + 1 });
+  }
+
+  get isMultiLeg(): boolean {
+    return this.selectedLegs.length > 1;
+  }
+
+  // ── Autofill ─────────────────────────────────────────────
+
+  showAutofillBanner(legIdx: number): boolean {
+    return !this.isLegTrain(legIdx) && this.getPassengersArray(legIdx).length > 1;
+  }
+
+  handleAutofill(legIdx: number): void {
+    const state = this.autofillStates[legIdx];
+    state.autofillError = '';
+    const paxArray = this.getPassengersArray(legIdx);
+    const firstPax = paxArray.at(0).value;
+
+    if (!firstPax.passengerName?.trim() || !firstPax.phoneLocalNumber?.trim()) {
+      state.autofillError = this.language.instant('Please fill out the Name and Phone of Passenger 1 first');
+      state.isAutofilled = false;
+      return;
+    }
+
+    for (let i = 1; i < paxArray.length; i++) {
+      paxArray.at(i).patchValue({
+        passengerName: firstPax.passengerName,
+        phoneCode: firstPax.phoneCode,
+        phoneLocalNumber: firstPax.phoneLocalNumber,
+      });
+    }
+
+    state.isAutofilled = true;
+  }
+
+  private watchFirstPassengerForAutofillReset(legIdx: number): void {
+    if (this.isLegTrain(legIdx)) return;
+    const paxArray = this.getPassengersArray(legIdx);
+    if (paxArray.length === 0) return;
+
+    const firstPax = paxArray.at(0);
+    let prev = { ...firstPax.value };
+
+    const sub = firstPax.valueChanges.subscribe((value) => {
+      const changed =
+        value.passengerName !== prev.passengerName ||
+        value.phoneCode !== prev.phoneCode ||
+        value.phoneLocalNumber !== prev.phoneLocalNumber;
+
+      if (changed && this.autofillStates[legIdx]?.isAutofilled) {
+        this.autofillStates[legIdx].isAutofilled = false;
+      }
+      prev = { ...value };
+    });
+
+    this.autofillSubs.push(sub);
+  }
+
+  // ── Profile prefill helpers ───────────────────────────────
+
+  private profilePassengerDraft(): PassengerDraft | undefined {
+    if (!this.state.isProfileLoaded) return undefined;
+
+    const profile = this.state.userProfile;
+    const fullName = [profile.firstName, profile.lastName, profile.familyName]
+      .map((part) => (part || '').trim())
+      .filter(Boolean)
+      .join(' ');
+    const phone = profile.phone
+      ? splitPhoneNumber(profile.phone, this.phoneCodes)
+      : { dialCode: DEFAULT_PHONE_CODE, localNumber: '' };
+
+    if (!fullName && !phone.localNumber && !profile.email && !profile.idNumber) {
+      return undefined;
+    }
+
+    return {
+      fullName,
+      phoneCode: phone.dialCode,
+      phoneLocalNumber: phone.localNumber,
+      email: profile.email || '',
+      idType: this.profileIdType(),
+      nationalId: profile.idNumber || '',
+    };
+  }
+
+  private profileIdType(): 'NationalId' | 'Passport' {
+    const idType = String(this.state.userProfile.idType ?? '').toLowerCase();
+    return idType === '2' || idType === 'passport' ? 'Passport' : 'NationalId';
+  }
+
+  private mergePassengerDraft(profileDraft?: PassengerDraft, savedDraft?: PassengerDraft): PassengerDraft | undefined {
+    if (!profileDraft) return savedDraft;
+    if (!savedDraft) return profileDraft;
+    return {
+      fullName: savedDraft.fullName?.trim() || profileDraft.fullName,
+      phoneCode: savedDraft.phoneLocalNumber?.trim() ? savedDraft.phoneCode : profileDraft.phoneCode,
+      phoneLocalNumber: savedDraft.phoneLocalNumber?.trim() || profileDraft.phoneLocalNumber,
+      email: savedDraft.email?.trim() || profileDraft.email,
+      idType: savedDraft.idType || profileDraft.idType,
+      nationalId: savedDraft.nationalId?.trim() || profileDraft.nationalId,
+    };
+  }
+
+  // ── Phone codes ───────────────────────────────────────────
 
   private async loadPhoneCodes(): Promise<void> {
     try {
@@ -129,33 +259,12 @@ export class PassengerDetailsComponent implements OnInit {
     }
   }
 
-  // Auto-fill logic for Bus
-  get showAutofillBanner(): boolean {
-    return !this.isTrain && this.passengerCount > 1;
-  }
-
-  handleAutofill(): void {
-    this.autofillError = '';
-    const firstPax = this.passengersArray.at(0).value;
-
-    if (!firstPax.passengerName?.trim() || !firstPax.phoneLocalNumber?.trim()) {
-      this.autofillError = 'Please fill out the Name and Phone of Passenger 1 first.';
-      this.isAutofilled = false;
-      return;
-    }
-
-    for (let i = 1; i < this.passengersArray.length; i++) {
-      this.passengersArray.at(i).patchValue({
-        phoneCode: firstPax.phoneCode,
-        phoneLocalNumber: firstPax.phoneLocalNumber
-      });
-    }
-
-    this.isAutofilled = true;
-  }
+  // ── Sync drafts (flatten legs → passengers) ───────────────
 
   private syncPassengerDrafts(): void {
-    this.state.pendingPassengers = this.passengersArray.controls.map((control) => {
+    // Flatten to first leg's passengers for backward compat with state.pendingPassengers
+    const firstLegPax = this.getPassengersArray(0);
+    this.state.pendingPassengers = firstLegPax.controls.map((control) => {
       const val = control.value;
       return {
         fullName: val.passengerName,
@@ -163,87 +272,73 @@ export class PassengerDetailsComponent implements OnInit {
         phoneLocalNumber: val.phoneLocalNumber,
         email: val.email,
         nationalId: val.idNumber,
-        idType: val.idType
+        idType: val.idType,
       };
     });
   }
 
+  // ── Actions ───────────────────────────────────────────────
+
   async addToCart(): Promise<void> {
+    this.actionError = '';
     if (this.form.invalid || this.selectedLegs.length === 0) {
       this.form.markAllAsTouched();
+      this.actionError = this.language.instant('Please complete all passenger details before adding to cart');
       return;
     }
 
     this.isProcessing = true;
-
     try {
       this.syncPassengerDrafts();
       await this.state.addLegsToCart();
-      await this.router.navigate(['/my-tickets']);
+      await this.router.navigate(['/cart']);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to add trips to cart';
-      alert(message);
+      this.actionError = this.api.formatError(error, this.language.instant('Failed to add trips to cart'));
     } finally {
       this.isProcessing = false;
     }
   }
 
   async bookNow(): Promise<void> {
+    this.actionError = '';
     if (this.form.invalid || this.selectedLegs.length === 0) {
       this.form.markAllAsTouched();
+      this.actionError = this.language.instant('Please complete all passenger details before booking');
       return;
     }
 
     this.isProcessing = true;
-
     try {
       this.syncPassengerDrafts();
-
-      // Build currentPaymentBooking from the selected legs BEFORE adding to cart
-      const firstLeg = this.selectedLegs[0];
-      const lastLeg = this.selectedLegs[this.selectedLegs.length - 1];
-      this.state.currentPaymentBooking = {
-        id: firstLeg.tripOccurrenceId ?? firstLeg.id,
-        ticketId: firstLeg.tripOccurrenceId ?? firstLeg.id,
-        from: firstLeg.from,
-        to: lastLeg.to,
-        date: firstLeg.date,
-        time: firstLeg.time,
-        duration: firstLeg.duration,
-        passengers: this.passengerCount,
-        price: this.finalTotal,
-        status: 'pending',
-        seat: '',
-        className: firstLeg.className,
-        agencyName: firstLeg.agencyName || firstLeg.transport,
-      };
-
-      await this.state.addLegsToCart();
-      await this.state.loadBookings();
-      await this.router.navigate(['/payment']);
+      await this.state.bookSelectedLegsNow(this.pointsToRedeem);
+      await this.router.navigate(['/my-tickets']);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to proceed with booking';
-      alert(message);
+      this.actionError = this.api.formatError(error, this.language.instant('Failed to proceed with booking'));
+      if (error instanceof DirectBookingError && error.cartAdded) {
+        await this.router.navigate(['/cart'], {
+          state: { cartError: this.actionError },
+        });
+      }
     } finally {
       this.isProcessing = false;
     }
   }
 
   async goBack(): Promise<void> {
-    // Navigate back to trips or seat selection
-    this.state.selectedLegs = [];
-    this.state.currentLegIndex = 0;
-    this.state.selectedSeats = [];
-    await this.router.navigate(['/trips']);
+    // Return to seat selection (leg-review), not all the way back to trip search.
+    // Selected legs and seats are preserved so the user just adjusts seats.
+    await this.router.navigate(['/leg-review']);
   }
 
-  get passengerCount(): number {
-    return this.state.searchPassengers || 1;
-  }
+  // ── Pricing / points ──────────────────────────────────────
 
   get totalPrice(): number {
-    const totalLegsPrice = this.selectedLegs.reduce((sum, leg) => sum + (leg.price || 0), 0);
-    return totalLegsPrice * this.passengerCount;
+    return this.selectedLegs.reduce((sum, leg, legIdx) => {
+      const count = this.isLegTrain(legIdx)
+        ? (this.state.searchPassengers || 1)
+        : Math.max(1, leg.selectedSeats?.length ?? 1);
+      return sum + ((leg.price || 0) * count);
+    }, 0);
   }
 
   get pointsBalance(): number {
